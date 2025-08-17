@@ -13,6 +13,17 @@
       background-color: #1f2937; /* A dark blue-gray */
       color: #d1d5db; /* A light gray for text */
     }
+    .search-container {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .filter-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
     #table-info {
       font-weight: 500;
       text-align: center;
@@ -74,6 +85,30 @@
       border-color: #4f46e5;
       box-shadow: 0 0 0 2px #4f46e5;
     }
+    .filter-container select {
+      background-color: #374151;
+      border: 1px solid #4b5563;
+      color: #f9fafb;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+    }
+    #searchInput {
+      width: 100%;
+      max-width: 500px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      background-color: #374151;
+      border: 1px solid #4b5563;
+      color: #f9fafb;
+      border-radius: 6px;
+    }
+    #searchInput:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2px #4f46e5;
+    }
+    #searchInput::placeholder { color: #9ca3af; }
     #sheet tr td:first-child input[type="text"] {
       width: 250px;
     }
@@ -89,6 +124,10 @@
       <button id="refresh" style="display:none" onclick="loadData()">Refresh</button>
       <button id="save" style="display:none" onclick="saveData()">Save changes</button>
     </div>
+    <div class="search-container">
+      <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="Search by any column...">
+    </div>
+    <div id="filter-container" class="filter-container"></div>
     <div id="table-info"></div>
     <table id="sheet"></table>
   </div>
@@ -103,6 +142,7 @@
 
     let tokenClient;
     let accessToken;
+    let totalItemCount = 0;
 
     // ---- LOAD GAPI & INIT ----
     // The gapi.load callback is the guaranteed entry point after the base GAPI script has loaded.
@@ -166,6 +206,8 @@
       document.getElementById('save').style.display = 'none';
       document.getElementById('sheet').innerHTML = '';
       document.getElementById('table-info').innerHTML = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filter-container').innerHTML = '';
     }
 
     // ---- FETCH DATA ----
@@ -184,10 +226,13 @@
       table.innerHTML = ''; // Clear previous content
       tableInfo.innerHTML = ''; // Clear previous info
 
+      // Create the filter dropdowns before rendering the table
+      createFilterDropdowns(values);
+
       // Display item count. The first row is the header.
-      const itemCount = values.length > 0 ? values.length - 1 : 0;
-      if (itemCount >= 0) {
-        tableInfo.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''} in the equipment inventory.`;
+      totalItemCount = values.length > 0 ? values.length - 1 : 0;
+      if (totalItemCount >= 0) {
+        tableInfo.textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
       }
 
       // If there's only a header or no data, stop here.
@@ -247,6 +292,97 @@
         resource: { values: allRows },
       });
       alert('Saved');
+    }
+
+    // ---- FILTERING LOGIC ----
+    function createFilterDropdowns(values) {
+      const container = document.getElementById('filter-container');
+      container.innerHTML = ''; // Clear existing filters
+
+      if (values.length < 2) return; // No data or only headers
+
+      const headers = values[0];
+      const dataRows = values.slice(1);
+
+      const headersToExclude = ['item', 'quantity', 'serial number', 'description'];
+
+      headers.forEach((header, index) => {
+        // Don't create filters for columns where a dropdown is not useful (e.g., unique values).
+        if (headersToExclude.includes(header.toLowerCase())) {
+          return;
+        }
+
+        // Get unique, non-empty values for the column and sort them
+        const uniqueValues = [...new Set(dataRows.map(row => row[index]).filter(Boolean))].sort();
+
+        // Don't create a filter if there are no unique options to choose from
+        if (uniqueValues.length < 1) return;
+
+        const select = document.createElement('select');
+        select.dataset.columnIndex = index;
+        select.onchange = applyFilters;
+
+        // Add a default "All" option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = `All ${header}`;
+        select.appendChild(defaultOption);
+
+        // Add an option for each unique value
+        uniqueValues.forEach(value => {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
+
+        container.appendChild(select);
+      });
+    }
+
+    function applyFilters() {
+      const searchInput = document.getElementById('searchInput');
+      const searchTerm = searchInput.value.toLowerCase();
+      const table = document.getElementById('sheet');
+      const tbody = table.querySelector('tbody');
+      const tableInfo = document.getElementById('table-info');
+      const filterSelects = document.querySelectorAll('#filter-container select');
+
+      if (!tbody) return;
+
+      const activeFilters = {};
+      filterSelects.forEach(select => {
+        if (select.value) {
+          activeFilters[select.dataset.columnIndex] = select.value;
+        }
+      });
+
+      const rows = tbody.getElementsByTagName('tr');
+      let visibleRowCount = 0;
+
+      for (const row of rows) {
+        const inputs = row.querySelectorAll('input[type="text"]');
+        let matchesFilters = true;
+        for (const columnIndex in activeFilters) {
+          if (inputs[columnIndex]?.value !== activeFilters[columnIndex]) {
+            matchesFilters = false;
+            break;
+          }
+        }
+
+        const rowText = Array.from(inputs).map(i => i.value).join(' ').toLowerCase();
+        const matchesSearch = !searchTerm || rowText.includes(searchTerm);
+
+        const isVisible = matchesFilters && matchesSearch;
+        row.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleRowCount++;
+      }
+
+      if (searchTerm || Object.keys(activeFilters).length > 0) {
+        tableInfo.textContent = `Found ${visibleRowCount} matching item${visibleRowCount !== 1 ? 's' : ''}.`;
+      } else {
+        tableInfo.textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
+      }
     }
   </script>
 </body>
