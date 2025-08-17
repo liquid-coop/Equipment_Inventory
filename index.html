@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Spreadsheet Viewer/Editor</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     #login { display: block; }
@@ -15,6 +17,7 @@
 </head>
 
 <body>
+  <!-- Password gate -->
   <div id="login">
     <h3>Password Required</h3>
     <input id="password" type="password" />
@@ -22,37 +25,77 @@
     <p id="loginStatus"></p>
   </div>
 
+  <!-- Main app -->
   <div id="app">
-    <button onclick="loadData()">Refresh</button>
+    <button id="signin">Sign in</button>
+    <button id="signout" style="display:none">Sign out</button>
+    <button id="refresh" style="display:none" onclick="loadData()">Refresh</button>
     <table id="sheet"></table>
-    <button onclick="saveData()">Save changes</button>
+    <button id="save" style="display:none" onclick="saveData()">Save changes</button>
   </div>
 
   <script>
-    // --- CONFIG ---
-    const API_KEY = 'AIzaSyDiTRaWzLsosfAhTkYYFZS-TnWoyPPdcJU';
+    // ---- CONFIG ----
+    const CLIENT_ID = 'YOUR_OAUTH_CLIENT_ID';
+    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
     const SPREADSHEET_ID = '1OoZGw6f5qtm--Srnxy41Db-yKrbprWL_PjGxW7PT1z4';
-    const RANGE = 'LA'; // Change to correct tab/range if needed
+    const RANGE = 'Sheet1';
     const PASSWORD = 'admin';
 
-    // --- LOGIN ---
+    let tokenClient;
+    let accessToken;
+
+    // ---- PASSWORD LOGIN ----
     function login() {
-      const pwd = document.getElementById('password').value;
-      if (pwd === PASSWORD) {
+      if (document.getElementById('password').value === PASSWORD) {
         document.getElementById('login').style.display = 'none';
         document.getElementById('app').style.display = 'block';
-        loadData();
       } else {
         document.getElementById('loginStatus').textContent = 'Wrong password';
       }
     }
 
-    // --- FETCH DATA ---
+    // ---- LOAD GAPI & INIT ----
+    gapi.load('client', async () => {
+      await gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4');
+    });
+
+    window.onload = () => {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (resp) => {
+          accessToken = resp.access_token;
+          document.getElementById('signin').style.display = 'none';
+          document.getElementById('signout').style.display = 'inline';
+          document.getElementById('refresh').style.display = 'inline';
+          document.getElementById('save').style.display = 'inline';
+          loadData();
+        },
+      });
+
+      document.getElementById('signin').onclick = () => tokenClient.requestAccessToken();
+      document.getElementById('signout').onclick = () => {
+        accessToken = null;
+        google.accounts.oauth2.revoke(CLIENT_ID, () => {});
+        document.getElementById('signin').style.display = 'inline';
+        document.getElementById('signout').style.display = 'none';
+        document.getElementById('refresh').style.display = 'none';
+        document.getElementById('save').style.display = 'none';
+        document.getElementById('sheet').innerHTML = '';
+      };
+    };
+
+    // ---- FETCH DATA ----
     async function loadData() {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(RANGE)}?key=${API_KEY}`;
-      const res = await fetch(url);
-      const json = await res.json();
-      const values = json.values || [];
+      if (!accessToken) return;
+      gapi.client.setToken({ access_token: accessToken });
+
+      const res = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: RANGE,
+      });
+      const values = res.result.values || [];
 
       const table = document.getElementById('sheet');
       table.innerHTML = '';
@@ -70,23 +113,22 @@
       });
     }
 
-    // --- SAVE DATA ---
+    // ---- SAVE DATA (Step 3) ----
     async function saveData() {
       const table = document.getElementById('sheet');
       const rows = Array.from(table.rows).map(tr =>
         Array.from(tr.cells).map(td => td.firstChild.value)
       );
 
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(RANGE)}?valueInputOption=USER_ENTERED&key=${API_KEY}`;
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: rows })
+      gapi.client.setToken({ access_token: accessToken });
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: RANGE,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values: rows },
       });
-      const data = await res.json();
       alert('Saved');
     }
   </script>
 </body>
 </html>
-
