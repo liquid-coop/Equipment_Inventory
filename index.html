@@ -7,8 +7,7 @@
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
     body { font-family: sans-serif; margin: 20px; }
-    #login { display: block; }
-    #app { display: none; }
+    #app { display: block; }
     table { border-collapse: collapse; margin-top: 10px; }
     td, th { border: 1px solid #ccc; padding: 4px; }
     input[type="password"] { width: 150px; }
@@ -17,14 +16,6 @@
 </head>
 
 <body>
-  <!-- Password gate -->
-  <div id="login">
-    <h3>Password Required</h3>
-    <input id="password" type="password" />
-    <button onclick="login()">Login</button>
-    <p id="loginStatus"></p>
-  </div>
-
   <!-- Main app -->
   <div id="app">
     <button id="signin">Sign in</button>
@@ -40,20 +31,9 @@
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
     const SPREADSHEET_ID = '1OoZGw6f5qtm--Srnxy41Db-yKrbprWL_PjGxW7PT1z4';
     const RANGE = 'LA';
-    const PASSWORD = 'admin';
 
     let tokenClient;
     let accessToken;
-
-    // ---- PASSWORD LOGIN ----
-    function login() {
-      if (document.getElementById('password').value === PASSWORD) {
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-      } else {
-        document.getElementById('loginStatus').textContent = 'Wrong password';
-      }
-    }
 
     // ---- LOAD GAPI & INIT ----
     gapi.load('client', async () => {
@@ -65,6 +45,14 @@
         client_id: CLIENT_ID,
         scope: SCOPES,
         callback: (resp) => {
+          // A token response is returned if the user has previously granted access
+          // and has a valid session. Check for errors from a silent auth attempt.
+          if (resp.error) {
+            // The user needs to sign in and grant consent.
+            // The "Sign in" button is already visible, so just log the error.
+            console.warn('Silent token request failed, user needs to click "Sign in".', resp);
+            return;
+          }
           accessToken = resp.access_token;
           document.getElementById('signin').style.display = 'none';
           document.getElementById('signout').style.display = 'inline';
@@ -74,10 +62,14 @@
         },
       });
 
+      // Attempt to get a token silently on page load.
+      tokenClient.requestAccessToken({prompt: ''});
+
       document.getElementById('signin').onclick = () => tokenClient.requestAccessToken();
       document.getElementById('signout').onclick = () => {
+        // Simply clear the token to "sign out" of the app for this session.
+        // Revoking the token would force the user to re-grant permissions on next visit.
         accessToken = null;
-        google.accounts.oauth2.revoke(CLIENT_ID, () => {});
         document.getElementById('signin').style.display = 'inline';
         document.getElementById('signout').style.display = 'none';
         document.getElementById('refresh').style.display = 'none';
