@@ -71,6 +71,9 @@
       font-weight: 600;
       text-align: left;
     }
+    thead th[data-sortable="true"] {
+      cursor: pointer;
+    }
     input[type="text"] {
       width: 100px;
       background-color: #4b5563;
@@ -240,6 +243,11 @@
     let totalItemCount = 0;
     let rowToDelete = null;
     let sheetId = null; // To cache the sheet ID for delete operations
+    let sortState = {
+      columnIndex: null,
+      direction: 'asc' // 'asc' or 'desc'
+    };
+    let originalHeaders = [];
 
     // ---- LOAD GAPI & INIT ----
     // The gapi.load callback is the guaranteed entry point after the base GAPI script has loaded.
@@ -339,6 +347,7 @@
 
       // If there are headers, create the add item form
       if (values.length > 0) {
+        originalHeaders = values[0];
         createAddItemForm(values[0]);
       }
 
@@ -362,9 +371,12 @@
 
       // Header Row (first row of data)
       const headerRow = document.createElement('tr');
-      values[0].forEach(headerText => {
+      originalHeaders.forEach((headerText, index) => {
         const th = document.createElement('th');
         th.textContent = headerText;
+        th.dataset.sortable = "true";
+        th.dataset.columnIndex = index;
+        th.onclick = () => sortTable(index);
         headerRow.appendChild(th);
       });
       const actionTh = document.createElement('th');
@@ -396,6 +408,8 @@
 
         tbody.appendChild(tr);
       });
+
+      updateSortIndicators(); // Apply indicators if table was previously sorted
     }
 
     // ---- ADD ITEM ----
@@ -537,22 +551,87 @@
       }
     }
 
+    // ---- SORTING ----
+    function sortTable(columnIndex) {
+      const table = document.getElementById('sheet');
+      const tbody = table.querySelector('tbody');
+      if (!tbody) return;
+
+      // Determine sort direction
+      let direction = 'asc';
+      if (sortState.columnIndex === columnIndex && sortState.direction === 'asc') {
+        direction = 'desc';
+      }
+
+      sortState.columnIndex = columnIndex;
+      sortState.direction = direction;
+
+      const rows = Array.from(tbody.rows);
+
+      rows.sort((a, b) => {
+        const aText = a.cells[columnIndex]?.querySelector('input')?.value || '';
+        const bText = b.cells[columnIndex]?.querySelector('input')?.value || '';
+
+        // Basic numeric check
+        const aIsNum = !isNaN(parseFloat(aText)) && isFinite(aText);
+        const bIsNum = !isNaN(parseFloat(bText)) && isFinite(bText);
+
+        let comparison = 0;
+        if (aIsNum && bIsNum) {
+          comparison = parseFloat(aText) - parseFloat(bText);
+        } else {
+          comparison = aText.localeCompare(bText, undefined, { sensitivity: 'base' });
+        }
+
+        return direction === 'asc' ? comparison : -comparison;
+      });
+
+      // Re-append sorted rows
+      rows.forEach(row => tbody.appendChild(row));
+
+      // Update header visuals
+      updateSortIndicators();
+    }
+
+    function updateSortIndicators() {
+      const table = document.getElementById('sheet');
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+
+      const headers = thead.querySelectorAll('th[data-sortable="true"]');
+      headers.forEach((th) => {
+        const columnIndex = parseInt(th.dataset.columnIndex, 10);
+        th.textContent = originalHeaders[columnIndex]; // Reset to original text
+
+        if (columnIndex === sortState.columnIndex) {
+          const indicator = sortState.direction === 'asc' ? ' ▲' : ' ▼';
+          th.textContent += indicator;
+        }
+      });
+    }
+
     // ---- SAVE DATA ----
     async function saveData() {
       const table = document.getElementById('sheet');
       const thead = table.querySelector('thead');
       const tbody = table.querySelector('tbody');
 
+      if (!thead || !tbody) {
+        alert('No data to save.');
+        return;
+      }
+
       // Get header data from thead
-      const headerRow = Array.from(thead.rows[0].cells).map(th => th.textContent);
+      const headerRow = originalHeaders;
 
       // Get body data from tbody inputs
       const bodyRows = Array.from(tbody.rows).map(tr =>
-        Array.from(tr.cells).map(td => td.querySelector('input').value)
+        Array.from(tr.cells).slice(0, -1).map(td => td.querySelector('input').value)
       );
 
       const allRows = [headerRow, ...bodyRows];
 
+      // Note: This will overwrite the entire sheet specified by RANGE.
       gapi.client.setToken({ access_token: accessToken });
       await gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
