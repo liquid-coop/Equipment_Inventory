@@ -6,12 +6,50 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
+    html {
+      height: 100vh;
+    }
     body {
       font-family: sans-serif;
       margin: 0;
       padding: 20px;
       background-color: #1f2937; /* A dark blue-gray */
       color: #d1d5db; /* A light gray for text */
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    #app {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0; /* Magic fix for flex children with overflow */
+    }
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-shrink: 0;
+    }
+    .logo-container {
+      flex: 1;
+    }
+    .logo-container img {
+      height: 40px;
+    }
+    .page-title {
+      flex: 2;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f9fafb;
+      margin: 0;
+    }
+    .header-spacer {
+      flex: 1;
     }
     .search-container {
       text-align: center;
@@ -55,33 +93,55 @@
     button#signin:hover {
       background-color: #4338ca;
     }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.unsaved {
+      background-color: #f59e0b; /* amber-500 */
+      border-color: #f59e0b;
+    }
+    button.unsaved:hover:not(:disabled) {
+      background-color: #d97706; /* amber-600 */
+    }
     table {
-      width: auto;
+      width: 100%;
       border-collapse: collapse;
-      margin: 0 auto;
       background-color: #374151; /* Darker gray for table bg */
       box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-      border-radius: 8px;
-      overflow: hidden; /* To make border-radius work on table */
     }
-    td, th { border: 1px solid #4b5563; padding: 8px 12px; }
+    .table-wrapper {
+      flex-grow: 1;
+      overflow-y: auto;
+      border-radius: 8px;
+    }
+    td, th { border: 1px solid #4b5563; padding: 4px 6px; }
     thead th {
       background-color: #111827; /* Even darker for header */
       color: #e5e7eb;
       font-weight: 600;
       text-align: left;
     }
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
     thead th[data-sortable="true"] {
       cursor: pointer;
     }
-    input[type="text"] {
-      width: 100px;
+    input[type="text"], td select, .add-item-form select {
+      width: 100%;
       background-color: #4b5563;
       border: 1px solid #6b7280;
       color: #f9fafb;
       padding: 6px 8px;
       border-radius: 4px;
       box-sizing: border-box; /* Important for consistent sizing */
+    }
+    .add-item-form select {
+      /* Ensures the select dropdown in the form has a minimum width */
+      min-width: 150px;
     }
     input[type="text"]:focus {
       outline: none;
@@ -112,21 +172,25 @@
       box-shadow: 0 0 0 2px #4f46e5;
     }
     #searchInput::placeholder { color: #9ca3af; }
-    #sheet tr td:first-child input[type="text"] {
+    #sheet tr th:first-child,
+    #sheet tr td:first-child {
       width: 250px;
     }
     #add-item-container {
-      background-color: #374151;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      background-color: #111827; /* Very dark, like the table header */
+      border: 1px solid #4f46e5; /* Primary color border */
+      box-shadow: 0 0 15px rgba(79, 70, 229, 0.2); /* Subtle glow */
+      padding: 24px;
+      border-radius: 12px;
+      margin: 0 auto 24px auto; /* Center with indentation */
+      max-width: 95%;
     }
     .add-item-form {
       display: flex;
       flex-wrap: wrap;
       gap: 20px 15px; /* row-gap column-gap */
       align-items: flex-end;
+      justify-content: center;
     }
     .add-item-form .input-group {
       display: flex;
@@ -152,13 +216,33 @@
     .add-item-form .wide-add-input {
       width: 250px;
     }
+    th.short-column,
+    td.short-column {
+      width: 70px;
+    }
+    th.count-column,
+    td.count-column {
+      width: 50px;
+      text-align: center;
+    }
+    .action-column {
+      width: 1%;
+      white-space: nowrap;
+      text-align: center;
+    }
     .delete-btn {
-      background-color: #ef4444; /* red-500 */
-      border-color: #ef4444;
-      padding: 4px 8px;
-      font-size: 0.75rem;
+      background-color: #ef4444; /* A bright red */
+      border: none;
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
-      border-radius: 4px;
     }
     .delete-btn:hover {
       background-color: #dc2626; /* red-600 */
@@ -201,6 +285,15 @@
 </head>
 
 <body>
+  <header class="page-header">
+    <div class="logo-container">
+      <img src="https://raw.githubusercontent.com/liquid-coop/equipment-checkout/main/Horizontal-Mono-Light.png" alt="Company Logo"
+           onerror="this.style.display='none'">
+    </div>
+    <h1 class="page-title">Equipment Inventory</h1>
+    <div class="header-spacer"></div>
+  </header>
+
   <!-- Main app -->
   <div id="app">
     <div class="button-container">
@@ -215,7 +308,9 @@
     </div>
     <div id="filter-container" class="filter-container"></div>
     <div id="table-info"></div>
-    <table id="sheet"></table>
+    <div class="table-wrapper">
+      <table id="sheet"></table>
+    </div>
   </div>
 
   <!-- Delete Confirmation Modal -->
@@ -232,11 +327,17 @@
 
   <script>
     // ---- CONFIG ----
-    const CLIENT_ID = '222790090853-hhcir6632un723qjqs1fn2ulcvrj0u02.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-    const SPREADSHEET_ID = '1OoZGw6f5qtm--Srnxy41Db-yKrbprWL_PjGxW7PT1z4';
-    const RANGE = 'LA';
-    const TOKEN_KEY = 'gapi_token';
+    const CONFIG = {
+      CLIENT_ID: '222790090853-hhcir6632un723qjqs1fn2ulcvrj0u02.apps.googleusercontent.com',
+      SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
+      SPREADSHEET_ID: '1OoZGw6f5qtm--Srnxy41Db-yKrbprWL_PjGxW7PT1z4',
+      RANGE: 'LA',
+      TOKEN_KEY: 'gapi_token'
+    };
+
+    const CONSTANTS = {
+      PREDEFINED_STATUSES: ['Good', 'Usable', 'Needs Repair', 'Out for Repair', 'Missing']
+    };
 
     let tokenClient;
     let accessToken;
@@ -260,8 +361,8 @@
 
       // 2. Initialize the OAuth 2.0 token client.
       tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
+        client_id: CONFIG.CLIENT_ID,
+        scope: CONFIG.SCOPES,
         callback: (resp) => {
           if (resp.error) {
             // This can happen on a silent sign-in failure. The user will need to click the "Sign in" button.
@@ -271,14 +372,14 @@
           accessToken = resp.access_token;
           // Use a default of 1 hour (3600 seconds) if expires_in is not provided.
           const expiresAt = Date.now() + (resp.expires_in || 3600) * 1000;
-          localStorage.setItem(TOKEN_KEY, JSON.stringify({ access_token: accessToken, expires_at: expiresAt }));
+          localStorage.setItem(CONFIG.TOKEN_KEY, JSON.stringify({ access_token: accessToken, expires_at: expiresAt }));
           showApp();
           loadData();
         },
       });
 
       // 3. Check for a valid, non-expired token in local storage.
-      const stored = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null');
+      const stored = JSON.parse(localStorage.getItem(CONFIG.TOKEN_KEY) || 'null');
       if (stored && stored.expires_at > Date.now()) {
         accessToken = stored.access_token;
         showApp();
@@ -292,7 +393,7 @@
       document.getElementById('signin').onclick = () => tokenClient.requestAccessToken();
       document.getElementById('signout').onclick = () => {
         accessToken = null;
-        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(CONFIG.TOKEN_KEY);
         hideApp();
       };
       // Add modal listeners
@@ -306,13 +407,27 @@
           deleteRow(rowToDelete);
         }
       };
+
+      // Add listener for table changes to enable save button
+      const sheetTable = document.getElementById('sheet');
+      const handleTableChange = () => {
+        const saveButton = document.getElementById('save');
+        if (saveButton.disabled) {
+          saveButton.disabled = false;
+          saveButton.textContent = 'Save Changes*';
+          saveButton.classList.add('unsaved');
+        }
+      };
+      sheetTable.addEventListener('input', handleTableChange);
     }
 
     function showApp() {
       document.getElementById('signin').style.display = 'none';
       document.getElementById('signout').style.display = 'inline';
       document.getElementById('refresh').style.display = 'inline';
-      document.getElementById('save').style.display = 'inline';
+      const saveButton = document.getElementById('save');
+      saveButton.style.display = 'inline';
+      saveButton.disabled = true;
       document.getElementById('add-item-container').style.display = 'block';
     }
 
@@ -329,14 +444,28 @@
       document.getElementById('add-item-container').innerHTML = '';
     }
 
+    function getHeaderDisplayText(originalHeader) {
+        const headerMap = {
+            'Location': 'Loc',
+            'Quantity': '#'
+        };
+        return headerMap[originalHeader] || originalHeader;
+    }
+
     // ---- FETCH DATA ----
     async function loadData() {
       if (!accessToken) return;
+
+      const saveButton = document.getElementById('save');
+      saveButton.disabled = true;
+      saveButton.textContent = 'Save Changes';
+      saveButton.classList.remove('unsaved');
+
       gapi.client.setToken({ access_token: accessToken });
 
       const res = await gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: RANGE,
+        spreadsheetId: CONFIG.SPREADSHEET_ID,
+        range: CONFIG.RANGE,
       });
       const values = res.result.values || [];
 
@@ -348,7 +477,7 @@
       // If there are headers, create the add item form
       if (values.length > 0) {
         originalHeaders = values[0];
-        createAddItemForm(values[0]);
+        createAddItemForm(values);
       }
 
       // Create the filter dropdowns before rendering the table
@@ -363,6 +492,15 @@
       // If there's only a header or no data, stop here.
       if (values.length <= 1) return;
 
+      // Find category column index and unique values for dropdowns
+      const headers = values[0];
+      const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
+      let uniqueCategories = [];
+      if (categoryIndex !== -1) {
+          uniqueCategories = [...new Set(values.slice(1).map(row => row[categoryIndex]).filter(Boolean))].sort();
+      }
+
+
       // Create thead and tbody
       const thead = document.createElement('thead');
       const tbody = document.createElement('tbody');
@@ -373,31 +511,83 @@
       const headerRow = document.createElement('tr');
       originalHeaders.forEach((headerText, index) => {
         const th = document.createElement('th');
-        th.textContent = headerText;
+        th.textContent = getHeaderDisplayText(headerText);
         th.dataset.sortable = "true";
         th.dataset.columnIndex = index;
         th.onclick = () => sortTable(index);
+
+        const lowerCaseHeader = headerText.toLowerCase();
+        if (lowerCaseHeader === 'location') {
+            th.classList.add('short-column');
+        }
+        if (lowerCaseHeader === 'quantity') {
+            th.classList.add('count-column');
+        }
         headerRow.appendChild(th);
       });
       const actionTh = document.createElement('th');
-      actionTh.textContent = 'Actions';
+      actionTh.textContent = '';
+      actionTh.classList.add('action-column');
       headerRow.appendChild(actionTh);
       thead.appendChild(headerRow);
 
       // Data Rows (rest of the data)
       values.slice(1).forEach((row, index) => {
         const tr = document.createElement('tr');
-        row.forEach(cell => {
+        // Iterate over headers to ensure a cell is created for every column, even if empty.
+        originalHeaders.forEach((header, headerIndex) => {
+          const cellValue = row[headerIndex] || ''; // Use empty string for missing cells
           const td = document.createElement('td');
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.value = cell;
-          td.appendChild(input);
+
+          const lowerCaseHeader = header.toLowerCase();
+          if (lowerCaseHeader === 'location') {
+              td.classList.add('short-column');
+          }
+          if (lowerCaseHeader === 'quantity') {
+              td.classList.add('count-column');
+          }
+
+          if (header.toLowerCase() === 'category') {
+            const select = document.createElement('select');
+
+            // Create a combined list of options to avoid duplicates and ensure the current value is present
+            const options = [...uniqueCategories];
+            if (cellValue && !options.includes(cellValue)) {
+                options.push(cellValue);
+                options.sort();
+            }
+
+            options.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+
+            select.value = cellValue;
+            td.appendChild(select);
+          } else if (header.toLowerCase() === 'status') {
+            const select = document.createElement('select');
+            CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
+              const option = document.createElement('option');
+              option.value = stat;
+              option.textContent = stat;
+              select.appendChild(option);
+            });
+            select.value = cellValue;
+            td.appendChild(select);
+          } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = cellValue;
+            td.appendChild(input);
+          }
           tr.appendChild(td);
         });
 
         // Add delete button cell
         const actionTd = document.createElement('td');
+        actionTd.classList.add('action-column');
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'X';
         deleteButton.className = 'delete-btn';
@@ -415,8 +605,8 @@
     // ---- ADD ITEM ----
     async function addItem() {
       const addButton = document.querySelector('.add-item-form button');
-      const inputs = document.querySelectorAll('.add-item-form input[type="text"]');
-      const newRow = Array.from(inputs).map(input => input.value);
+      const fields = document.querySelectorAll('.add-item-form input[type="text"], .add-item-form select');
+      const newRow = Array.from(fields).map(field => field.value);
 
       if (newRow.every(cell => cell.trim() === '')) {
         alert('Please fill in at least one field to add an item.');
@@ -429,8 +619,8 @@
       try {
         gapi.client.setToken({ access_token: accessToken });
         await gapi.client.sheets.spreadsheets.values.append({
-          spreadsheetId: SPREADSHEET_ID,
-          range: RANGE,
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          range: CONFIG.RANGE,
           valueInputOption: 'USER_ENTERED',
           insertDataOption: 'INSERT_ROWS',
           resource: {
@@ -447,9 +637,29 @@
       }
     }
 
-    function createAddItemForm(headers) {
+    function createAddItemForm(values) {
       const container = document.getElementById('add-item-container');
       container.innerHTML = ''; // Clear previous form
+
+      if (values.length === 0) return;
+      const headers = values[0];
+      const dataRows = values.slice(1);
+
+      const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
+      let uniqueCategories = [];
+      if (categoryIndex !== -1) {
+          uniqueCategories = [...new Set(dataRows.map(row => row[categoryIndex]).filter(Boolean))].sort();
+      }
+
+
+      const headerElement = document.createElement('h3');
+      headerElement.textContent = 'Add Item';
+      headerElement.style.color = '#f9fafb';
+      headerElement.style.fontWeight = '600';
+      headerElement.style.fontSize = '1.25rem';
+      headerElement.style.marginBottom = '16px';
+      headerElement.style.marginTop = '0';
+      container.appendChild(headerElement);
 
       const form = document.createElement('div');
       form.className = 'add-item-form';
@@ -462,17 +672,52 @@
         label.textContent = header;
         inputGroup.appendChild(label);
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = `Enter ${header}...`;
+        if (header.toLowerCase() === 'category') {
+          const select = document.createElement('select');
+          
+          const placeholder = document.createElement('option');
+          placeholder.value = "";
+          placeholder.textContent = "Choose Category";
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          select.appendChild(placeholder);
 
-        const lowerCaseHeader = header.toLowerCase();
-        if (['item', 'description', 'notes'].includes(lowerCaseHeader)) {
-          input.classList.add('wide-add-input');
+          uniqueCategories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            select.appendChild(option);
+          });
+          inputGroup.appendChild(select);
+        } else if (header.toLowerCase() === 'status') {
+          const select = document.createElement('select');
+
+          const placeholder = document.createElement('option');
+          placeholder.value = "";
+          placeholder.textContent = "Choose Status";
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          select.appendChild(placeholder);
+
+          CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
+            const option = document.createElement('option');
+            option.value = stat;
+            option.textContent = stat;
+            select.appendChild(option);
+          });
+          inputGroup.appendChild(select);
+        } else {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = `Enter ${header}...`;
+
+          const lowerCaseHeader = header.toLowerCase();
+          if (['item', 'description', 'notes'].includes(lowerCaseHeader)) {
+            input.classList.add('wide-add-input');
+          }
+
+          inputGroup.appendChild(input);
         }
-
-        inputGroup.appendChild(input);
-
         form.appendChild(inputGroup);
       });
 
@@ -496,7 +741,7 @@
       try {
         gapi.client.setToken({ access_token: accessToken });
         const response = await gapi.client.sheets.spreadsheets.get({
-          spreadsheetId: SPREADSHEET_ID,
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
         });
 
         const sheet = response.result.sheets.find(s => s.properties.title === sheetName);
@@ -520,10 +765,10 @@
       confirmBtn.textContent = 'Deleting...';
 
       try {
-        const currentSheetId = await getSheetId(RANGE); // RANGE is 'LA'
+        const currentSheetId = await getSheetId(CONFIG.RANGE); // e.g. 'LA'
 
         await gapi.client.sheets.spreadsheets.batchUpdate({
-          spreadsheetId: SPREADSHEET_ID,
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
           resource: {
             requests: [{
               deleteDimension: {
@@ -601,7 +846,7 @@
       const headers = thead.querySelectorAll('th[data-sortable="true"]');
       headers.forEach((th) => {
         const columnIndex = parseInt(th.dataset.columnIndex, 10);
-        th.textContent = originalHeaders[columnIndex]; // Reset to original text
+        th.textContent = getHeaderDisplayText(originalHeaders[columnIndex]); // Reset to original text
 
         if (columnIndex === sortState.columnIndex) {
           const indicator = sortState.direction === 'asc' ? ' ▲' : ' ▼';
@@ -613,6 +858,11 @@
     // ---- SAVE DATA ----
     async function saveData() {
       const table = document.getElementById('sheet');
+      const saveButton = document.getElementById('save');
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving...';
+      saveButton.classList.remove('unsaved');
+
       const thead = table.querySelector('thead');
       const tbody = table.querySelector('tbody');
 
@@ -626,20 +876,30 @@
 
       // Get body data from tbody inputs
       const bodyRows = Array.from(tbody.rows).map(tr =>
-        Array.from(tr.cells).slice(0, -1).map(td => td.querySelector('input').value)
+        Array.from(tr.cells).slice(0, -1).map(td => td.querySelector('input, select').value)
       );
 
       const allRows = [headerRow, ...bodyRows];
 
       // Note: This will overwrite the entire sheet specified by RANGE.
-      gapi.client.setToken({ access_token: accessToken });
-      await gapi.client.sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: RANGE,
-        valueInputOption: 'USER_ENTERED',
-        resource: { values: allRows },
-      });
-      alert('Saved');
+      try {
+        gapi.client.setToken({ access_token: accessToken });
+        await gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          range: CONFIG.RANGE,
+          valueInputOption: 'USER_ENTERED',
+          resource: { values: allRows },
+        });
+        alert('Saved');
+        saveButton.textContent = 'Save Changes';
+        // The button remains disabled until a new change is made.
+      } catch (err) {
+        console.error('Error saving data:', err);
+        alert('Failed to save data. See console for details.');
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save Changes*';
+        saveButton.classList.add('unsaved');
+      }
     }
 
     // ---- FILTERING LOGIC ----
