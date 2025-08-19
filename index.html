@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Spreadsheet Viewer/Editor</title>
+  <title>TL Equipment Inventory</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
@@ -13,8 +13,8 @@
       font-family: sans-serif;
       margin: 0;
       padding: 20px;
-      background-color: #1f2937; /* A dark blue-gray */
-      color: #d1d5db; /* A light gray for text */
+      background-color: #001538; /* TL Dark Blue */
+      color: #EEEEEE; /* TL Off-White */
       height: 100%;
       display: flex;
       flex-direction: column;
@@ -30,7 +30,6 @@
     .page-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       margin-bottom: 24px;
       flex-shrink: 0;
     }
@@ -41,15 +40,11 @@
       height: 40px;
     }
     .page-title {
-      flex: 2;
       text-align: center;
       font-size: 2rem;
       font-weight: 700;
-      color: #f9fafb;
+      color: #EEEEEE;
       margin: 0;
-    }
-    .header-spacer {
-      flex: 1;
     }
     .search-container {
       text-align: center;
@@ -68,10 +63,10 @@
       margin-bottom: 20px;
     }
     .button-container {
+      flex: 1;
       display: flex;
       justify-content: flex-end;
       gap: 8px;
-      margin-bottom: 12px;
     }
     button {
       background-color: #4b5563; /* A mid-gray */
@@ -87,27 +82,27 @@
       background-color: #6b7280;
     }
     button#signin {
-      background-color: #4f46e5; /* A nice blue for primary action */
-      border-color: #4f46e5;
+      background-color: #3BB0D4; /* TL Cyan */
+      border-color: #3BB0D4;
     }
     button#signin:hover {
-      background-color: #4338ca;
+      background-color: #349dbb; /* Darker TL Cyan */
     }
     button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
     button.unsaved {
-      background-color: #f59e0b; /* amber-500 */
-      border-color: #f59e0b;
+      background-color: #F7C95E; /* TL Yellow */
+      border-color: #F7C95E;
     }
     button.unsaved:hover:not(:disabled) {
-      background-color: #d97706; /* amber-600 */
+      background-color: #F09F26; /* TL Orange */
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: #374151; /* Darker gray for table bg */
+      background-color: #374151; /* Dark gray for table bg */
       box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
     .table-wrapper {
@@ -115,10 +110,10 @@
       overflow-y: auto;
       border-radius: 8px;
     }
-    td, th { border: 1px solid #4b5563; padding: 4px 6px; }
+    td, th { border: 1px solid #4b5563; padding: 4px 6px; } /* Mid-gray border */
     thead th {
-      background-color: #111827; /* Even darker for header */
-      color: #e5e7eb;
+      background-color: #111827; /* Very dark gray for header */
+      color: #e5e7eb; /* Light gray text for header */
       font-weight: 600;
       text-align: left;
     }
@@ -132,25 +127,28 @@
     }
     input[type="text"], td select, .add-item-form select {
       width: 100%;
-      background-color: #4b5563;
-      border: 1px solid #6b7280;
+      background-color: #374151; /* Dark gray */
+      border: 1px solid #4b5563; /* Mid-gray border */
       color: #f9fafb;
       padding: 6px 8px;
       border-radius: 4px;
       box-sizing: border-box; /* Important for consistent sizing */
     }
+    td input[type="text"], td select {
+      background-color: #4b5563; /* Original gray */
+      border-color: #6b7280; /* Original gray border */
+    }
     .add-item-form select {
-      /* Ensures the select dropdown in the form has a minimum width */
       min-width: 150px;
     }
     input[type="text"]:focus {
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 2px #4f46e5;
+      border-color: #3BB0D4;
+      box-shadow: 0 0 0 2px #3BB0D4;
     }
     .filter-container select {
-      background-color: #374151;
-      border: 1px solid #4b5563;
+      background-color: #374151; /* Dark gray */
+      border: 1px solid #4b5563; /* Mid-gray border */
       color: #f9fafb;
       border-radius: 6px;
       padding: 8px 12px;
@@ -161,25 +159,25 @@
       max-width: 500px;
       padding: 10px 15px;
       font-size: 1rem;
-      background-color: #374151;
-      border: 1px solid #4b5563;
+      background-color: #374151; /* Dark gray */
+      border: 1px solid #4b5563; /* Mid-gray border */
       color: #f9fafb;
       border-radius: 6px;
     }
     #searchInput:focus {
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 2px #4f46e5;
+      border-color: #3BB0D4;
+      box-shadow: 0 0 0 2px #3BB0D4;
     }
-    #searchInput::placeholder { color: #9ca3af; }
+    #searchInput::placeholder { color: #a0a0a0; }
     #sheet tr th:first-child,
     #sheet tr td:first-child {
       width: 250px;
     }
     #add-item-container {
-      background-color: #111827; /* Very dark, like the table header */
-      border: 1px solid #4f46e5; /* Primary color border */
-      box-shadow: 0 0 15px rgba(79, 70, 229, 0.2); /* Subtle glow */
+      background-color: #001538; /* TL Dark Blue */
+      border: 1px solid #3BB0D4; /* TL Cyan */
+      box-shadow: 0 0 15px rgba(59, 176, 212, 0.2); /* Cyan glow */
       padding: 24px;
       border-radius: 12px;
       margin: 0 auto 24px auto; /* Center with indentation */
@@ -199,16 +197,16 @@
     }
     .add-item-form label {
       font-size: 0.75rem;
-      color: #9ca3af;
+      color: #a0a0a0;
       text-transform: uppercase;
       font-weight: 600;
     }
     .add-item-form button {
-      background-color: #4f46e5;
-      border-color: #4f46e5;
+      background-color: #3BB0D4;
+      border-color: #3BB0D4;
     }
     .add-item-form button:hover:not(:disabled) {
-      background-color: #4338ca;
+      background-color: #349dbb;
     }
     .add-item-form button:disabled {
       opacity: 0.7;
@@ -216,9 +214,26 @@
     .add-item-form .wide-add-input {
       width: 250px;
     }
-    th.short-column,
-    td.short-column {
-      width: 70px;
+    .sheet-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .sheet-selector button {
+      background-color: #374151; /* Dark gray */
+      border: 1px solid #4b5563; /* Mid-gray border */
+    }
+    .sheet-selector button.active {
+      background-color: #3BB0D4; /* TL Cyan */
+      border-color: #3BB0D4;
+      font-weight: 700;
+    }
+    .owner-column {
+      width: 110px;
+    }
+    .serial-column {
+      width: 90px;
     }
     th.count-column,
     td.count-column {
@@ -231,7 +246,7 @@
       text-align: center;
     }
     .delete-btn {
-      background-color: #ef4444; /* A bright red */
+      background-color: #ED5651; /* TL Red */
       border: none;
       color: #fff;
       width: 24px;
@@ -245,7 +260,7 @@
       line-height: 1;
     }
     .delete-btn:hover {
-      background-color: #dc2626; /* red-600 */
+      background-color: #d54c47; /* Darker TL Red */
     }
     .modal-overlay {
       position: fixed;
@@ -253,14 +268,14 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: rgba(0, 0, 0, 0.6);
+      background-color: rgba(0, 21, 56, 0.6);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
     }
     .modal-content {
-      background-color: #374151;
+      background-color: #002052;
       padding: 20px 30px;
       border-radius: 8px;
       box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -269,7 +284,7 @@
     }
     .modal-content h3 {
       margin-top: 0;
-      color: #f9fafb;
+      color: #EEEEEE;
     }
     .modal-buttons {
       margin-top: 20px;
@@ -278,8 +293,37 @@
       gap: 15px;
     }
     .modal-buttons button.danger {
-      background-color: #dc2626; /* A strong red */
-      border-color: #dc2626;
+      background-color: #ED5651; /* TL Red */
+      border-color: #ED5651;
+    }
+    /* Loading Spinner Styles */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 21, 56, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      color: #EEEEEE;
+      font-size: 1.2rem;
+    }
+    .spinner {
+      border: 5px solid #4b5563;
+      border-top: 5px solid #3BB0D4;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -291,17 +335,17 @@
            onerror="this.style.display='none'">
     </div>
     <h1 class="page-title">Equipment Inventory</h1>
-    <div class="header-spacer"></div>
-  </header>
-
-  <!-- Main app -->
-  <div id="app">
     <div class="button-container">
       <button id="signin">Sign in</button>
       <button id="signout" style="display:none">Sign out</button>
       <button id="refresh" style="display:none" onclick="loadData()">Refresh</button>
       <button id="save" style="display:none" onclick="saveData()">Save changes</button>
     </div>
+  </header>
+
+  <!-- Main app -->
+  <div id="app">
+    <div id="sheet-selector" class="sheet-selector"></div>
     <div id="add-item-container" style="display:none;"></div>
     <div class="search-container">
       <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="Search by any column...">
@@ -325,13 +369,20 @@
     </div>
   </div>
 
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <p>Loading Data...</p>
+  </div>
+
   <script>
     // ---- CONFIG ----
     const CONFIG = {
       CLIENT_ID: '222790090853-hhcir6632un723qjqs1fn2ulcvrj0u02.apps.googleusercontent.com',
       SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
       SPREADSHEET_ID: '1OoZGw6f5qtm--Srnxy41Db-yKrbprWL_PjGxW7PT1z4',
-      RANGE: 'LA',
+      RANGE: 'LA', // The default sheet to load on startup
+      SHEETS: ['LA', 'BR', 'NL', 'DE'], // Add your sheet names here
       TOKEN_KEY: 'gapi_token'
     };
 
@@ -343,7 +394,7 @@
     let accessToken;
     let totalItemCount = 0;
     let rowToDelete = null;
-    let sheetId = null; // To cache the sheet ID for delete operations
+    let sheetIdCache = {}; // To cache sheet IDs for delete operations
     let sortState = {
       columnIndex: null,
       direction: 'asc' // 'asc' or 'desc'
@@ -428,6 +479,7 @@
       const saveButton = document.getElementById('save');
       saveButton.style.display = 'inline';
       saveButton.disabled = true;
+      createSheetSelector();
       document.getElementById('add-item-container').style.display = 'block';
     }
 
@@ -439,6 +491,7 @@
       document.getElementById('sheet').innerHTML = '';
       document.getElementById('table-info').innerHTML = '';
       document.getElementById('searchInput').value = '';
+      document.getElementById('sheet-selector').innerHTML = '';
       document.getElementById('filter-container').innerHTML = '';
       document.getElementById('add-item-container').style.display = 'none';
       document.getElementById('add-item-container').innerHTML = '';
@@ -446,160 +499,192 @@
 
     function getHeaderDisplayText(originalHeader) {
         const headerMap = {
-            'Location': 'Loc',
-            'Quantity': '#'
+            'Quantity': '#',
+            'Serial number': 'Serial #'
         };
         return headerMap[originalHeader] || originalHeader;
     }
 
     // ---- FETCH DATA ----
     async function loadData() {
-      if (!accessToken) return;
-
-      const saveButton = document.getElementById('save');
-      saveButton.disabled = true;
-      saveButton.textContent = 'Save Changes';
-      saveButton.classList.remove('unsaved');
-
-      gapi.client.setToken({ access_token: accessToken });
-
-      const res = await gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: CONFIG.SPREADSHEET_ID,
-        range: CONFIG.RANGE,
-      });
-      const values = res.result.values || [];
-
-      const tableInfo = document.getElementById('table-info');
-      const table = document.getElementById('sheet');
-      table.innerHTML = ''; // Clear previous content
-      tableInfo.innerHTML = ''; // Clear previous info
-
-      // If there are headers, create the add item form
-      if (values.length > 0) {
-        originalHeaders = values[0];
-        createAddItemForm(values);
+      if (!accessToken) {
+        return;
       }
+      const loadingOverlay = document.getElementById('loading-overlay');
+      loadingOverlay.style.display = 'flex';
 
-      // Create the filter dropdowns before rendering the table
-      createFilterDropdowns(values);
+      try {
+        const saveButton = document.getElementById('save');
+        saveButton.disabled = true;
+        saveButton.textContent = 'Save Changes';
+        saveButton.classList.remove('unsaved');
 
-      // Display item count. The first row is the header.
-      totalItemCount = values.length > 0 ? values.length - 1 : 0;
-      if (totalItemCount >= 0) {
-        tableInfo.textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
-      }
+        gapi.client.setToken({ access_token: accessToken });
 
-      // If there's only a header or no data, stop here.
-      if (values.length <= 1) return;
+        const res = await gapi.client.sheets.spreadsheets.values.get({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          range: CONFIG.RANGE,
+        });
+        const values = res.result.values || [];
 
-      // Find category column index and unique values for dropdowns
-      const headers = values[0];
-      const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
-      let uniqueCategories = [];
-      if (categoryIndex !== -1) {
-          uniqueCategories = [...new Set(values.slice(1).map(row => row[categoryIndex]).filter(Boolean))].sort();
-      }
+        const tableInfo = document.getElementById('table-info');
+        const table = document.getElementById('sheet');
+        table.innerHTML = ''; // Clear previous content
+        tableInfo.innerHTML = ''; // Clear previous info
 
-
-      // Create thead and tbody
-      const thead = document.createElement('thead');
-      const tbody = document.createElement('tbody');
-      table.appendChild(thead);
-      table.appendChild(tbody);
-
-      // Header Row (first row of data)
-      const headerRow = document.createElement('tr');
-      originalHeaders.forEach((headerText, index) => {
-        const th = document.createElement('th');
-        th.textContent = getHeaderDisplayText(headerText);
-        th.dataset.sortable = "true";
-        th.dataset.columnIndex = index;
-        th.onclick = () => sortTable(index);
-
-        const lowerCaseHeader = headerText.toLowerCase();
-        if (lowerCaseHeader === 'location') {
-            th.classList.add('short-column');
+        // If there are headers, create the add item form
+        if (values.length > 0) {
+          originalHeaders = values[0];
+          createAddItemForm(values);
         }
-        if (lowerCaseHeader === 'quantity') {
-            th.classList.add('count-column');
+
+        // Create the filter dropdowns before rendering the table
+        createFilterDropdowns(values);
+
+        // Display item count. The first row is the header.
+        totalItemCount = values.length > 0 ? values.length - 1 : 0;
+        if (totalItemCount >= 0) {
+          tableInfo.textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
         }
-        headerRow.appendChild(th);
-      });
-      const actionTh = document.createElement('th');
-      actionTh.textContent = '';
-      actionTh.classList.add('action-column');
-      headerRow.appendChild(actionTh);
-      thead.appendChild(headerRow);
 
-      // Data Rows (rest of the data)
-      values.slice(1).forEach((row, index) => {
-        const tr = document.createElement('tr');
-        // Iterate over headers to ensure a cell is created for every column, even if empty.
-        originalHeaders.forEach((header, headerIndex) => {
-          const cellValue = row[headerIndex] || ''; // Use empty string for missing cells
-          const td = document.createElement('td');
+        // If there's only a header or no data, stop here.
+        if (values.length <= 1) return;
 
-          const lowerCaseHeader = header.toLowerCase();
-          if (lowerCaseHeader === 'location') {
-              td.classList.add('short-column');
+        // Find category column index and unique values for dropdowns
+        const headers = values[0];
+        const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
+        let uniqueCategories = [];
+        if (categoryIndex !== -1) {
+            uniqueCategories = [...new Set(values.slice(1).map(row => row[categoryIndex]).filter(Boolean))].sort();
+        }
+
+
+        // Create thead and tbody
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+        table.appendChild(thead);
+        table.appendChild(tbody);
+
+        // Header Row (first row of data)
+        const headerRow = document.createElement('tr');
+        originalHeaders.forEach((headerText, index) => {
+          const th = document.createElement('th');
+          th.textContent = getHeaderDisplayText(headerText);
+          th.dataset.sortable = "true";
+          th.dataset.columnIndex = index;
+          th.onclick = () => sortTable(index);
+
+          const lowerCaseHeader = headerText.toLowerCase();
+          switch (lowerCaseHeader) {
+            case 'quantity':
+              th.classList.add('count-column');
+              break;
+            case 'owner':
+              th.classList.add('owner-column');
+              break;
+            case 'serial number':
+              th.classList.add('serial-column');
+              break;
           }
-          if (lowerCaseHeader === 'quantity') {
-              td.classList.add('count-column');
-          }
+          headerRow.appendChild(th);
+        });
+        const actionTh = document.createElement('th');
+        actionTh.textContent = '';
+        actionTh.classList.add('action-column');
+        headerRow.appendChild(actionTh);
+        thead.appendChild(headerRow);
 
-          if (header.toLowerCase() === 'category') {
-            const select = document.createElement('select');
+        // Data Rows (rest of the data)
+        values.slice(1).forEach((row, index) => {
+          const tr = document.createElement('tr');
+          // Iterate over headers to ensure a cell is created for every column, even if empty.
+          originalHeaders.forEach((header, headerIndex) => {
+            const cellValue = row[headerIndex] || ''; // Use empty string for missing cells
+            const td = document.createElement('td');
 
-            // Create a combined list of options to avoid duplicates and ensure the current value is present
-            const options = [...uniqueCategories];
-            if (cellValue && !options.includes(cellValue)) {
-                options.push(cellValue);
-                options.sort();
+            const lowerCaseHeader = header.toLowerCase();
+            switch (lowerCaseHeader) {
+              case 'quantity':
+                td.classList.add('count-column');
+                break;
+              case 'owner':
+                td.classList.add('owner-column');
+                break;
+              case 'serial number':
+                td.classList.add('serial-column');
+                break;
             }
 
-            options.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat;
-                option.textContent = cat;
-                select.appendChild(option);
-            });
+            if (header.toLowerCase() === 'category') {
+              const select = document.createElement('select');
 
-            select.value = cellValue;
-            td.appendChild(select);
-          } else if (header.toLowerCase() === 'status') {
-            const select = document.createElement('select');
-            CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
-              const option = document.createElement('option');
-              option.value = stat;
-              option.textContent = stat;
-              select.appendChild(option);
-            });
-            select.value = cellValue;
-            td.appendChild(select);
-          } else {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = cellValue;
-            td.appendChild(input);
-          }
-          tr.appendChild(td);
+              // Create a combined list of options to avoid duplicates and ensure the current value is present
+              const options = [...uniqueCategories];
+              if (cellValue && !options.includes(cellValue)) {
+                  options.push(cellValue);
+                  options.sort();
+              }
+
+              options.forEach(cat => {
+                  const option = document.createElement('option');
+                  option.value = cat;
+                  option.textContent = cat;
+                  select.appendChild(option);
+              });
+
+              select.value = cellValue;
+              td.appendChild(select);
+            } else if (header.toLowerCase() === 'status') {
+              const select = document.createElement('select');
+              CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
+                const option = document.createElement('option');
+                option.value = stat;
+                option.textContent = stat;
+                select.appendChild(option);
+              });
+              select.value = cellValue;
+              td.appendChild(select);
+            } else if (header.toLowerCase() === 'owner') {
+              const select = document.createElement('select');
+              const owners = ['BMC', 'Liquid Media'];
+              owners.forEach(owner => {
+                const option = document.createElement('option');
+                option.value = owner;
+                option.textContent = owner;
+                select.appendChild(option);
+              });
+              select.value = cellValue;
+              td.appendChild(select);
+            } else {
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.value = cellValue;
+              td.appendChild(input);
+            }
+            tr.appendChild(td);
+          });
+
+          // Add delete button cell
+          const actionTd = document.createElement('td');
+          actionTd.classList.add('action-column');
+          const deleteButton = document.createElement('button');
+          deleteButton.textContent = 'X';
+          deleteButton.className = 'delete-btn';
+          // The sheet row index is `index + 2` (1 for header, 1 for 0-based index)
+          deleteButton.onclick = () => promptDelete(index + 2);
+          actionTd.appendChild(deleteButton);
+          tr.appendChild(actionTd);
+
+          tbody.appendChild(tr);
         });
 
-        // Add delete button cell
-        const actionTd = document.createElement('td');
-        actionTd.classList.add('action-column');
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'X';
-        deleteButton.className = 'delete-btn';
-        // The sheet row index is `index + 2` (1 for header, 1 for 0-based index)
-        deleteButton.onclick = () => promptDelete(index + 2);
-        actionTd.appendChild(deleteButton);
-        tr.appendChild(actionTd);
-
-        tbody.appendChild(tr);
-      });
-
-      updateSortIndicators(); // Apply indicators if table was previously sorted
+        updateSortIndicators(); // Apply indicators if table was previously sorted
+      } catch (err) {
+        console.error("Failed to load data:", err);
+        alert("An error occurred while loading the data. Please check the console for more details and try refreshing the page.");
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
     }
 
     // ---- ADD ITEM ----
@@ -651,15 +736,11 @@
           uniqueCategories = [...new Set(dataRows.map(row => row[categoryIndex]).filter(Boolean))].sort();
       }
 
-
-      const headerElement = document.createElement('h3');
-      headerElement.textContent = 'Add Item';
-      headerElement.style.color = '#f9fafb';
-      headerElement.style.fontWeight = '600';
-      headerElement.style.fontSize = '1.25rem';
-      headerElement.style.marginBottom = '16px';
-      headerElement.style.marginTop = '0';
-      container.appendChild(headerElement);
+      const brandIndex = headers.findIndex(h => h.toLowerCase() === 'brand');
+      let uniqueBrands = [];
+      if (brandIndex !== -1) {
+        uniqueBrands = [...new Set(dataRows.map(row => row[brandIndex]).filter(Boolean))].sort();
+      }
 
       const form = document.createElement('div');
       form.className = 'add-item-form';
@@ -692,26 +773,58 @@
         } else if (header.toLowerCase() === 'status') {
           const select = document.createElement('select');
 
-          const placeholder = document.createElement('option');
-          placeholder.value = "";
-          placeholder.textContent = "Choose Status";
-          placeholder.disabled = true;
-          placeholder.selected = true;
-          select.appendChild(placeholder);
-
           CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
             const option = document.createElement('option');
             option.value = stat;
             option.textContent = stat;
+            if (stat === 'Good') {
+              option.selected = true; // Set 'Good' as the default
+            }
             select.appendChild(option);
           });
           inputGroup.appendChild(select);
+        } else if (header.toLowerCase() === 'owner') {
+          const select = document.createElement('select');
+          const owners = ['BMC', 'Liquid Media'];
+
+          owners.forEach(owner => {
+            const option = document.createElement('option');
+            option.value = owner;
+            option.textContent = owner;
+            if (owner === 'BMC') {
+              option.selected = true; // Set BMC as the default
+            }
+            select.appendChild(option);
+          });
+          inputGroup.appendChild(select);
+        } else if (header.toLowerCase() === 'brand') {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = 'Enter or select brand...';
+          input.setAttribute('list', 'brand-datalist');
+
+          const dataList = document.createElement('datalist');
+          dataList.id = 'brand-datalist';
+
+          uniqueBrands.forEach(brand => {
+            const option = document.createElement('option');
+            option.value = brand;
+            dataList.appendChild(option);
+          });
+
+          inputGroup.appendChild(input);
+          inputGroup.appendChild(dataList);
         } else {
           const input = document.createElement('input');
           input.type = 'text';
-          input.placeholder = `Enter ${header}...`;
 
           const lowerCaseHeader = header.toLowerCase();
+          if (lowerCaseHeader === 'quantity') {
+            input.value = '1';
+          } else {
+            input.placeholder = `Enter ${header}...`;
+          }
+
           if (['item', 'description', 'notes'].includes(lowerCaseHeader)) {
             input.classList.add('wide-add-input');
           }
@@ -724,6 +837,8 @@
       const addButton = document.createElement('button');
       addButton.textContent = 'Add Item';
       addButton.onclick = addItem;
+      addButton.style.padding = '10px 24px';
+      addButton.style.fontSize = '1rem';
       form.appendChild(addButton);
 
       container.appendChild(form);
@@ -736,7 +851,7 @@
     }
 
     async function getSheetId(sheetName) {
-      if (sheetId) return sheetId; // Return from cache if we have it
+      if (sheetIdCache[sheetName]) return sheetIdCache[sheetName]; // Return from cache if we have it
 
       try {
         gapi.client.setToken({ access_token: accessToken });
@@ -746,8 +861,8 @@
 
         const sheet = response.result.sheets.find(s => s.properties.title === sheetName);
         if (sheet) {
-          sheetId = sheet.properties.sheetId;
-          return sheetId;
+          sheetIdCache[sheetName] = sheet.properties.sheetId;
+          return sheetIdCache[sheetName];
         } else {
           throw new Error(`Sheet with name "${sheetName}" not found.`);
         }
@@ -794,6 +909,39 @@
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Delete';
       }
+    }
+
+    // ---- SHEET SWITCHING ----
+    function createSheetSelector() {
+      const container = document.getElementById('sheet-selector');
+      container.innerHTML = ''; // Clear existing buttons
+
+      CONFIG.SHEETS.forEach(sheetName => {
+        const button = document.createElement('button');
+        button.textContent = sheetName;
+        button.dataset.sheet = sheetName;
+        button.onclick = () => switchSheet(sheetName);
+        if (sheetName === CONFIG.RANGE) {
+          button.classList.add('active');
+        }
+        container.appendChild(button);
+      });
+    }
+
+    function switchSheet(sheetName) {
+      // Update the config to point to the new sheet
+      CONFIG.RANGE = sheetName;
+
+      // Update the active state on the buttons
+      document.querySelectorAll('#sheet-selector button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.sheet === sheetName);
+      });
+
+      // Reset sorting state
+      sortState = { columnIndex: null, direction: 'asc' };
+
+      // Reload data from the new sheet
+      loadData();
     }
 
     // ---- SORTING ----
@@ -915,13 +1063,19 @@
       const headersToExclude = ['item', 'quantity', 'serial number', 'description'];
 
       headers.forEach((header, index) => {
+        const lowerCaseHeader = header.toLowerCase();
         // Don't create filters for columns where a dropdown is not useful (e.g., unique values).
-        if (headersToExclude.includes(header.toLowerCase())) {
+        if (headersToExclude.includes(lowerCaseHeader)) {
           return;
         }
 
-        // Get unique, non-empty values for the column and sort them
-        const uniqueValues = [...new Set(dataRows.map(row => row[index]).filter(Boolean))].sort();
+        let uniqueValues;
+        if (lowerCaseHeader === 'status') {
+          uniqueValues = CONSTANTS.PREDEFINED_STATUSES;
+        } else {
+          // Get unique, non-empty values for the column and sort them
+          uniqueValues = [...new Set(dataRows.map(row => row[index]).filter(Boolean))].sort();
+        }
 
         // Don't create a filter if there are no unique options to choose from
         if (uniqueValues.length < 1) return;
@@ -969,16 +1123,16 @@
       let visibleRowCount = 0;
 
       for (const row of rows) {
-        const inputs = row.querySelectorAll('input[type="text"]');
+        const cellControls = row.querySelectorAll('input[type="text"], select');
         let matchesFilters = true;
         for (const columnIndex in activeFilters) {
-          if (inputs[columnIndex]?.value !== activeFilters[columnIndex]) {
+          if (cellControls[columnIndex]?.value !== activeFilters[columnIndex]) {
             matchesFilters = false;
             break;
           }
         }
 
-        const rowText = Array.from(inputs).map(i => i.value).join(' ').toLowerCase();
+        const rowText = Array.from(cellControls).map(i => i.value).join(' ').toLowerCase();
         const matchesSearch = !searchTerm || rowText.includes(searchTerm);
 
         const isVisible = matchesFilters && matchesSearch;
