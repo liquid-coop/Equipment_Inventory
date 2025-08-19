@@ -339,7 +339,6 @@
       <button id="signin">Sign in</button>
       <button id="signout" style="display:none">Sign out</button>
       <button id="refresh" style="display:none" onclick="loadData()">Refresh</button>
-      <button id="save" style="display:none" onclick="saveData()">Save changes</button>
     </div>
   </header>
 
@@ -459,26 +458,12 @@
         }
       };
 
-      // Add listener for table changes to enable save button
-      const sheetTable = document.getElementById('sheet');
-      const handleTableChange = () => {
-        const saveButton = document.getElementById('save');
-        if (saveButton.disabled) {
-          saveButton.disabled = false;
-          saveButton.textContent = 'Save Changes*';
-          saveButton.classList.add('unsaved');
-        }
-      };
-      sheetTable.addEventListener('input', handleTableChange);
     }
 
     function showApp() {
       document.getElementById('signin').style.display = 'none';
       document.getElementById('signout').style.display = 'inline';
       document.getElementById('refresh').style.display = 'inline';
-      const saveButton = document.getElementById('save');
-      saveButton.style.display = 'inline';
-      saveButton.disabled = true;
       createSheetSelector();
       document.getElementById('add-item-container').style.display = 'block';
     }
@@ -487,7 +472,6 @@
       document.getElementById('signin').style.display = 'inline';
       document.getElementById('signout').style.display = 'none';
       document.getElementById('refresh').style.display = 'none';
-      document.getElementById('save').style.display = 'none';
       document.getElementById('sheet').innerHTML = '';
       document.getElementById('table-info').innerHTML = '';
       document.getElementById('searchInput').value = '';
@@ -514,11 +498,6 @@
       loadingOverlay.style.display = 'flex';
 
       try {
-        const saveButton = document.getElementById('save');
-        saveButton.disabled = true;
-        saveButton.textContent = 'Save Changes';
-        saveButton.classList.remove('unsaved');
-
         gapi.client.setToken({ access_token: accessToken });
 
         const res = await gapi.client.sheets.spreadsheets.values.get({
@@ -617,6 +596,7 @@
 
             if (header.toLowerCase() === 'category') {
               const select = document.createElement('select');
+              select.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
 
               // Create a combined list of options to avoid duplicates and ensure the current value is present
               const options = [...uniqueCategories];
@@ -636,6 +616,7 @@
               td.appendChild(select);
             } else if (header.toLowerCase() === 'status') {
               const select = document.createElement('select');
+              select.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
               CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
                 const option = document.createElement('option');
                 option.value = stat;
@@ -646,6 +627,7 @@
               td.appendChild(select);
             } else if (header.toLowerCase() === 'owner') {
               const select = document.createElement('select');
+              select.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
               const owners = ['BMC', 'Liquid Media'];
               owners.forEach(owner => {
                 const option = document.createElement('option');
@@ -659,6 +641,7 @@
               const input = document.createElement('input');
               input.type = 'text';
               input.value = cellValue;
+              input.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
               td.appendChild(input);
             }
             tr.appendChild(td);
@@ -682,6 +665,45 @@
       } catch (err) {
         console.error("Failed to load data:", err);
         alert("An error occurred while loading the data. Please check the console for more details and try refreshing the page.");
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
+    }
+
+    // ---- UPDATE CELL ----
+    function columnToLetter(column) {
+      let temp, letter = '';
+      while (column >= 0) {
+        temp = column % 26;
+        letter = String.fromCharCode(temp + 65) + letter;
+        column = Math.floor(column / 26) - 1;
+      }
+      return letter;
+    }
+
+    async function updateCell(rowIndex, colIndex, value) {
+      if (!accessToken) {
+        alert('Not signed in. Cannot save changes.');
+        return;
+      }
+
+      const loadingOverlay = document.getElementById('loading-overlay');
+      loadingOverlay.style.display = 'flex';
+
+      try {
+        gapi.client.setToken({ access_token: accessToken });
+        const range = `'${CONFIG.RANGE}'!${columnToLetter(colIndex)}${rowIndex}`;
+
+        await gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          range: range,
+          valueInputOption: 'USER_ENTERED',
+          resource: { values: [[value]] }
+        });
+      } catch (err) {
+        console.error(`Error updating cell ${rowIndex}:${colIndex}`, err);
+        alert('Failed to save change. Please refresh and try again. See console for details.');
+        loadData(); // Revert UI change on failure
       } finally {
         loadingOverlay.style.display = 'none';
       }
@@ -1001,53 +1023,6 @@
           th.textContent += indicator;
         }
       });
-    }
-
-    // ---- SAVE DATA ----
-    async function saveData() {
-      const table = document.getElementById('sheet');
-      const saveButton = document.getElementById('save');
-      saveButton.disabled = true;
-      saveButton.textContent = 'Saving...';
-      saveButton.classList.remove('unsaved');
-
-      const thead = table.querySelector('thead');
-      const tbody = table.querySelector('tbody');
-
-      if (!thead || !tbody) {
-        alert('No data to save.');
-        return;
-      }
-
-      // Get header data from thead
-      const headerRow = originalHeaders;
-
-      // Get body data from tbody inputs
-      const bodyRows = Array.from(tbody.rows).map(tr =>
-        Array.from(tr.cells).slice(0, -1).map(td => td.querySelector('input, select').value)
-      );
-
-      const allRows = [headerRow, ...bodyRows];
-
-      // Note: This will overwrite the entire sheet specified by RANGE.
-      try {
-        gapi.client.setToken({ access_token: accessToken });
-        await gapi.client.sheets.spreadsheets.values.update({
-          spreadsheetId: CONFIG.SPREADSHEET_ID,
-          range: CONFIG.RANGE,
-          valueInputOption: 'USER_ENTERED',
-          resource: { values: allRows },
-        });
-        alert('Saved');
-        saveButton.textContent = 'Save Changes';
-        // The button remains disabled until a new change is made.
-      } catch (err) {
-        console.error('Error saving data:', err);
-        alert('Failed to save data. See console for details.');
-        saveButton.disabled = false;
-        saveButton.textContent = 'Save Changes*';
-        saveButton.classList.add('unsaved');
-      }
     }
 
     // ---- FILTERING LOGIC ----
