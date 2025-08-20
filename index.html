@@ -435,8 +435,8 @@
         showApp();
         loadData();
       } else {
-        // 4. If no valid token, attempt a silent sign-in. The callback above will handle the response.
-        tokenClient.requestAccessToken({ prompt: 'none' });
+        // 4. If no valid token, do nothing. The user must click "Sign In" to initiate login.
+        // This prevents the automatic sign-in prompt on the initial page visit.
       }
 
       // 5. Set up button click handlers.
