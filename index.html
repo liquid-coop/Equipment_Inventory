@@ -417,9 +417,8 @@
     }
 
     async function initializeGapiClient() {
-      // 1) Ensure gapi client and Sheets API are loaded.
-      // This is called as a callback from gapi.load('client',...), so gapi.client is available.
-      await gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4');
+      // 1) GAPI client is loaded via gapi.load('client',...)
+      // We will use gapi.client.request for all API calls to avoid the slow discovery document load.
 
       // 2) Ensure Google Identity Services (GIS) is ready to avoid race conditions.
       await waitForGis();
@@ -529,9 +528,8 @@
       try {
         gapi.client.setToken({ access_token: accessToken });
 
-        const res = await gapi.client.sheets.spreadsheets.values.get({
-          spreadsheetId: CONFIG.SPREADSHEET_ID,
-          range: CONFIG.RANGE,
+        const res = await gapi.client.request({
+          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${CONFIG.RANGE}`,
         });
         const values = res.result.values || [];
 
@@ -723,11 +721,11 @@
         gapi.client.setToken({ access_token: accessToken });
         const range = `'${CONFIG.RANGE}'!${columnToLetter(colIndex)}${rowIndex}`;
 
-        await gapi.client.sheets.spreadsheets.values.update({
-          spreadsheetId: CONFIG.SPREADSHEET_ID,
-          range: range,
-          valueInputOption: 'USER_ENTERED',
-          resource: { values: [[value]] }
+        await gapi.client.request({
+          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${range}`,
+          method: 'PUT',
+          params: { valueInputOption: 'USER_ENTERED' },
+          body: { values: [[value]] }
         });
       } catch (err) {
         console.error(`Error updating cell ${rowIndex}:${colIndex}`, err);
@@ -754,12 +752,14 @@
 
       try {
         gapi.client.setToken({ access_token: accessToken });
-        await gapi.client.sheets.spreadsheets.values.append({
-          spreadsheetId: CONFIG.SPREADSHEET_ID,
-          range: CONFIG.RANGE,
-          valueInputOption: 'USER_ENTERED',
-          insertDataOption: 'INSERT_ROWS',
-          resource: {
+        await gapi.client.request({
+          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${CONFIG.RANGE}:append`,
+          method: 'POST',
+          params: {
+            valueInputOption: 'USER_ENTERED',
+            insertDataOption: 'INSERT_ROWS',
+          },
+          body: {
             values: [newRow],
           },
         });
@@ -906,8 +906,8 @@
 
       try {
         gapi.client.setToken({ access_token: accessToken });
-        const response = await gapi.client.sheets.spreadsheets.get({
-          spreadsheetId: CONFIG.SPREADSHEET_ID,
+        const response = await gapi.client.request({
+          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}`,
         });
 
         const sheet = response.result.sheets.find(s => s.properties.title === sheetName);
@@ -933,16 +933,16 @@
       try {
         const currentSheetId = await getSheetId(CONFIG.RANGE); // e.g. 'LA'
 
-        await gapi.client.sheets.spreadsheets.batchUpdate({
-          spreadsheetId: CONFIG.SPREADSHEET_ID,
-          resource: {
+        await gapi.client.request({
+          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}:batchUpdate`,
+          method: 'POST',
+          body: {
             requests: [{
               deleteDimension: {
                 range: {
                   sheetId: currentSheetId,
                   dimension: 'ROWS',
-                  // API is 0-based, sheet rows are 1-based.
-                  // The provided rowIndex is 1-based. So we need rowIndex - 1.
+                  // API is 0-based, sheet rows are 1-based. So we need rowIndex - 1.
                   startIndex: rowIndex - 1,
                   endIndex: rowIndex
                 }
