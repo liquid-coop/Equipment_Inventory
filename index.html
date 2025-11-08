@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>TL Equipment Inventory</title>
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://apis.google.com/js/api.js"></script>
+  <link rel="icon" type="image/x-icon" href="https://www.theliquid.com/favicon.ico">
   <style>
     html {
       height: 100vh;
@@ -337,9 +335,7 @@
     </div>
     <h1 class="page-title">Equipment Inventory</h1>
     <div class="button-container">
-      <button id="signin">Sign in</button>
-      <button id="signout" style="display:none">Sign out</button>
-      <button id="refresh" style="display:none" onclick="loadData()">Refresh</button>
+      <button id="refresh" onclick="loadData()">Refresh</button>
     </div>
   </header>
 
@@ -377,24 +373,57 @@
 
   <script>
     // ---- CONFIG ----
-    const CONFIG = {
-      CLIENT_ID: '222790090853-hhcir6632un723qjqs1fn2ulcvrj0u02.apps.googleusercontent.com',
-      SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
-      SPREADSHEET_ID: '1OoZGw6f5qtm--Srnxy41Db-yKrbprWL_PjGxW7PT1z4',
+    let CONFIG = {
       RANGE: 'LA', // The default sheet to load on startup
       SHEETS: ['LA', 'BR', 'NL', 'DE'], // Add your sheet names here
-      TOKEN_KEY: 'gapi_token'
     };
+
+    // --- DATA SIMULATION ---
+    const allData = {
+      'LA': [
+        ['Item', 'Category', 'Brand', 'Description', 'Serial number', 'Owner', 'Status', 'Quantity', 'Notes'],
+        ['Canon EOS R5', 'Camera', 'Canon', 'Full-frame mirrorless camera', 'SN-LA-CAM-01', 'BMC', 'Good', '1', ''],
+        ['MacBook Pro 16"', 'Computer', 'Apple', 'M1 Max, 64GB RAM', 'SN-LA-COMP-01', 'Liquid Media', 'Good', '1', 'Has a small scratch on the lid.'],
+        ['Shure SM7B', 'Audio', 'Shure', 'Dynamic vocal microphone', 'SN-LA-AUD-01', 'BMC', 'Usable', '2', ''],
+      ],
+      'BR': [
+        ['Item', 'Category', 'Brand', 'Description', 'Serial number', 'Owner', 'Status', 'Quantity', 'Notes'],
+        ['Rode NTG-3', 'Audio', 'Rode', 'Shotgun microphone', 'SN-BR-AUD-01', 'BMC', 'Good', '1', ''],
+      ],
+      'NL': [
+        ['Item', 'Category', 'Brand', 'Description', 'Serial number', 'Owner', 'Status', 'Quantity', 'Notes'],
+        ['Sony A7S III', 'Camera', 'Sony', 'Full-frame mirrorless camera', 'SN-NL-CAM-01', 'Liquid Media', 'Needs Repair', '1', 'Sensor has dead pixels.'],
+      ],
+      'DE': [
+        ['Item', 'Category', 'Brand', 'Description', 'Serial number', 'Owner', 'Status', 'Quantity', 'Notes'],
+      ]
+    };
+
+    // Function to save data to localStorage
+    function saveDataToStorage() {
+      localStorage.setItem('inventoryData', JSON.stringify(allData));
+    }
+
+    // Function to load data from localStorage
+    function loadDataFromStorage() {
+      const storedData = localStorage.getItem('inventoryData');
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        // Simple merge: update existing keys, add new ones.
+        for (const key in parsedData) {
+            if (Object.hasOwnProperty.call(parsedData, key)) {
+                allData[key] = parsedData[key];
+            }
+        }
+      }
+    }
 
     const CONSTANTS = {
       PREDEFINED_STATUSES: ['Good', 'Usable', 'Needs Repair', 'Out for Repair', 'Missing']
     };
 
-    let tokenClient;
-    let accessToken;
     let totalItemCount = 0;
     let rowToDelete = null;
-    let sheetIdCache = {}; // To cache sheet IDs for delete operations
     let sortState = {
       columnIndex: null,
       direction: 'asc' // 'asc' or 'desc'
@@ -402,111 +431,25 @@
     let originalHeaders = [];
 
     // ---- GAPI & GIS INITIALIZATION ----
-    // Entry point is to wait for gapi to be ready, then initialize.
-    gapi.load('client', initializeGapiClient);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDataFromStorage();
+      showApp();
+      loadData();
 
-    function waitForGis(timeoutMs = 8000) {
-      return new Promise((resolve, reject) => {
-        const start = Date.now();
-        (function check() {
-          if (window.google?.accounts?.oauth2) return resolve();
-          if (Date.now() - start > timeoutMs) return reject(new Error('GIS failed to load'));
-          setTimeout(check, 50);
-        })();
-      });
-    }
-
-    async function initializeGapiClient() {
-      // 1) GAPI client is loaded via gapi.load('client',...)
-      // We will use gapi.client.request for all API calls to avoid the slow discovery document load.
-
-      // 2) Ensure Google Identity Services (GIS) is ready to avoid race conditions.
-      await waitForGis();
-
-      // 3) Initialize the OAuth 2.0 Token Client.
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CONFIG.CLIENT_ID,
-        scope: CONFIG.SCOPES,
-        callback: (resp) => {
-          if (resp.error) {
-            console.warn('Token request failed:', resp);
-            // Keep the Sign in button visible for the user to click.
-            return;
-          }
-          accessToken = resp.access_token;
-          const expiresAt = Date.now() + (resp.expires_in || 3600) * 1000;
-          localStorage.setItem(CONFIG.TOKEN_KEY, JSON.stringify({
-            access_token: accessToken,
-            expires_at: expiresAt
-          }));
-          showApp();
-          loadData();
-        },
-      });
-
-      // 4) Try using a cached token first.
-      const stored = JSON.parse(localStorage.getItem(CONFIG.TOKEN_KEY) || 'null');
-      if (stored?.expires_at > Date.now()) {
-        accessToken = stored.access_token;
-        showApp();
-        loadData();
-      } else {
-        // 5) If no valid token, try a silent refresh (no popup) using an existing Google session.
-        // If the browser blocks it (e.g., third-party cookies disabled), this will fail gracefully,
-        // and the user will still see the "Sign in" button.
-        try {
-          tokenClient.requestAccessToken({ prompt: '' }); // An empty prompt is a silent attempt.
-        } catch (e) {
-          console.debug('Silent token attempt failed early:', e);
-        }
-      }
-
-      // 6) Set up button click handlers.
-      document.getElementById('signin').onclick = () => {
-        // The first interactive call should include prompt:'consent' to reliably force the popup.
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-      };
-
-      document.getElementById('signout').onclick = () => {
-        if (accessToken) {
-          // Revoke the grant so future silent attempts don’t auto-succeed after signing out.
-          google.accounts.oauth2.revoke(accessToken, () => {});
-        }
-        accessToken = null;
-        localStorage.removeItem(CONFIG.TOKEN_KEY);
-        hideApp();
-      };
-
-      // Modal listeners remain the same.
       document.getElementById('cancel-delete').onclick = () => {
         document.getElementById('delete-modal').style.display = 'none';
         rowToDelete = null;
       };
+
       document.getElementById('confirm-delete').onclick = () => {
         document.getElementById('delete-modal').style.display = 'none';
         if (rowToDelete !== null) deleteRow(rowToDelete);
       };
-    }
+    });
 
     function showApp() {
-      document.getElementById('signin').style.display = 'none';
-      document.getElementById('signout').style.display = 'inline';
-      document.getElementById('refresh').style.display = 'inline';
       createSheetSelector();
       document.getElementById('add-item-container').style.display = 'block';
-    }
-
-    function hideApp() {
-      document.getElementById('signin').style.display = 'inline';
-      document.getElementById('signout').style.display = 'none';
-      document.getElementById('refresh').style.display = 'none';
-      document.getElementById('sheet').innerHTML = '';
-      document.getElementById('table-info').innerHTML = '';
-      document.getElementById('searchInput').value = '';
-      document.getElementById('sheet-selector').innerHTML = '';
-      document.getElementById('filter-container').innerHTML = '';
-      document.getElementById('add-item-container').style.display = 'none';
-      document.getElementById('add-item-container').innerHTML = '';
     }
 
     function getHeaderDisplayText(originalHeader) {
@@ -519,19 +462,11 @@
 
     // ---- FETCH DATA ----
     async function loadData() {
-      if (!accessToken) {
-        return;
-      }
       const loadingOverlay = document.getElementById('loading-overlay');
       loadingOverlay.style.display = 'flex';
 
       try {
-        gapi.client.setToken({ access_token: accessToken });
-
-        const res = await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${CONFIG.RANGE}`,
-        });
-        const values = res.result.values || [];
+        const values = allData[CONFIG.RANGE] || [];
 
         const tableInfo = document.getElementById('table-info');
         const table = document.getElementById('sheet');
@@ -698,42 +633,14 @@
     }
 
     // ---- UPDATE CELL ----
-    function columnToLetter(column) {
-      let temp, letter = '';
-      while (column >= 0) {
-        temp = column % 26;
-        letter = String.fromCharCode(temp + 65) + letter;
-        column = Math.floor(column / 26) - 1;
-      }
-      return letter;
-    }
-
     async function updateCell(rowIndex, colIndex, value) {
-      if (!accessToken) {
-        alert('Not signed in. Cannot save changes.');
-        return;
-      }
-
-      const loadingOverlay = document.getElementById('loading-overlay');
-      loadingOverlay.style.display = 'flex';
-
-      try {
-        gapi.client.setToken({ access_token: accessToken });
-        const range = `'${CONFIG.RANGE}'!${columnToLetter(colIndex)}${rowIndex}`;
-
-        await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${range}`,
-          method: 'PUT',
-          params: { valueInputOption: 'USER_ENTERED' },
-          body: { values: [[value]] }
-        });
-      } catch (err) {
-        console.error(`Error updating cell ${rowIndex}:${colIndex}`, err);
-        alert('Failed to save change. Please refresh and try again. See console for details.');
-        loadData(); // Revert UI change on failure
-      } finally {
-        loadingOverlay.style.display = 'none';
-      }
+      // rowIndex is 1-based for sheet, but our array is 0-based.
+      // The data starts at index 1 of the sheet data (after headers).
+      // So sheet row 2 corresponds to allData[CONFIG.RANGE][1].
+      const dataRowIndex = rowIndex - 1;
+      allData[CONFIG.RANGE][dataRowIndex][colIndex] = value;
+      saveDataToStorage();
+      console.log(`Updated cell [${dataRowIndex}, ${colIndex}] to "${value}"`);
     }
 
     // ---- ADD ITEM ----
@@ -751,18 +658,8 @@
       addButton.textContent = 'Adding...';
 
       try {
-        gapi.client.setToken({ access_token: accessToken });
-        await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${CONFIG.RANGE}:append`,
-          method: 'POST',
-          params: {
-            valueInputOption: 'USER_ENTERED',
-            insertDataOption: 'INSERT_ROWS',
-          },
-          body: {
-            values: [newRow],
-          },
-        });
+        allData[CONFIG.RANGE].push(newRow);
+        saveDataToStorage();
         alert('Item added successfully!');
         loadData(); // Refresh the entire view
       } catch (err) {
@@ -902,54 +799,21 @@
     }
 
     async function getSheetId(sheetName) {
-      if (sheetIdCache[sheetName]) return sheetIdCache[sheetName]; // Return from cache if we have it
-
-      try {
-        gapi.client.setToken({ access_token: accessToken });
-        const response = await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}`,
-        });
-
-        const sheet = response.result.sheets.find(s => s.properties.title === sheetName);
-        if (sheet) {
-          sheetIdCache[sheetName] = sheet.properties.sheetId;
-          return sheetIdCache[sheetName];
-        } else {
-          throw new Error(`Sheet with name "${sheetName}" not found.`);
-        }
-      } catch (err) {
-        console.error('Error fetching sheet metadata:', err);
-        throw err; // Re-throw the error to be caught by the caller
-      }
+      // This function is no longer needed with local data, but we keep it to avoid breaking calls.
+      // It can just return a dummy value.
+      return 0;
     }
 
     async function deleteRow(rowIndex) {
-      if (!accessToken) return;
-
       const confirmBtn = document.getElementById('confirm-delete');
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'Deleting...';
 
       try {
-        const currentSheetId = await getSheetId(CONFIG.RANGE); // e.g. 'LA'
-
-        await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}:batchUpdate`,
-          method: 'POST',
-          body: {
-            requests: [{
-              deleteDimension: {
-                range: {
-                  sheetId: currentSheetId,
-                  dimension: 'ROWS',
-                  // API is 0-based, sheet rows are 1-based. So we need rowIndex - 1.
-                  startIndex: rowIndex - 1,
-                  endIndex: rowIndex
-                }
-              }
-            }]
-          }
-        });
+        // rowIndex is 1-based. The data array is 0-based.
+        // The first row of data is at index 1 of the sheet data array.
+        allData[CONFIG.RANGE].splice(rowIndex - 1, 1);
+        saveDataToStorage();
         alert('Item deleted successfully!');
         loadData(); // Refresh the view
       } catch (err) {
