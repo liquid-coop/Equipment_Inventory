@@ -281,6 +281,10 @@
       text-align: center;
       max-width: 400px;
     }
+    .table-container {
+      flex-grow: 1;
+      position: relative; /* For absolute positioning of tables */
+    }
     .modal-content h3 {
       margin-top: 0;
       color: #EEEEEE;
@@ -350,8 +354,8 @@
       <div id="filter-container" class="filter-container"></div>
     </div>
     <div id="table-info"></div>
-    <div class="table-wrapper">
-      <table id="sheet"></table>
+    <div id="table-container" class="table-container">
+      <!-- Tables for each sheet will be injected here -->
     </div>
   </div>
 
@@ -451,7 +455,7 @@
                     document.getElementById('add-item-container').style.display = 'block';
 
                     createSheetSelector();
-                    renderCurrentSheet();
+                    renderAllSheets(); // Render all sheets at once
                 } catch (error) {
                     alert('An error occurred while processing the CSV file.');
                     console.error("CSV Processing Error:", error);
@@ -497,18 +501,10 @@
     }
 
     // ---- FETCH DATA ----
-    function renderCurrentSheet() {
-      const values = allData[currentSheetName] || [];
-      const loadingOverlay = document.getElementById('loading-overlay');
-      loadingOverlay.style.display = 'flex';
-
-      try {
-        const tableInfo = document.getElementById('table-info');
-        const table = document.getElementById('sheet');
-        table.innerHTML = ''; // Clear previous content
-        tableInfo.innerHTML = ''; // Clear previous info
-
-        // If there are headers, create the add item form
+    function renderSheet(sheetName, container) {
+      const values = allData[sheetName] || [];
+      
+      // If there are headers, create the add item form (only for the first active sheet)
         if (values.length > 0) {
           originalHeaders = values[0];
           createAddItemForm(values);
@@ -516,15 +512,20 @@
 
         // Create the filter dropdowns before rendering the table
         createFilterDropdowns(values);
-
-        // Display item count. The first row is the header.
-        totalItemCount = values.length > 0 ? values.length - 1 : 0;
-        if (totalItemCount >= 0) {
-          tableInfo.textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
-        }
-
-        // If there's only a header or no data, stop here.
-        if (values.length <= 1) return;
+        
+        const table = document.createElement('table');
+        table.id = `sheet-${sheetName}`;
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        
+        const tableWrapper = document.createElement('div');
+        tableWrapper.className = 'table-wrapper';
+        tableWrapper.style.position = 'absolute';
+        tableWrapper.style.top = '0';
+        tableWrapper.style.left = '0';
+        tableWrapper.style.right = '0';
+        tableWrapper.style.bottom = '0';
+        tableWrapper.appendChild(table);
 
         // Find category column index and unique values for dropdowns
         const headers = values[0];
@@ -532,6 +533,12 @@
         let uniqueCategories = [];
         if (categoryIndex !== -1) {
             uniqueCategories = [...new Set(values.slice(1).map(row => row[categoryIndex]).filter(Boolean))].sort();
+        }
+
+        // If there's only a header or no data, just append the empty wrapper and stop.
+        if (values.length <= 1) {
+            container.appendChild(tableWrapper);
+            return;
         }
 
 
@@ -658,13 +665,38 @@
           tbody.appendChild(tr);
         });
 
-        updateSortIndicators(); // Apply indicators if table was previously sorted
+        container.appendChild(tableWrapper);
+    }
+
+    function renderAllSheets() {
+      const loadingOverlay = document.getElementById('loading-overlay');
+      loadingOverlay.style.display = 'flex';
+      
+      const tableContainer = document.getElementById('table-container');
+      tableContainer.innerHTML = ''; // Clear all old tables
+
+      try {
+        availableSheets.forEach(sheetName => {
+            renderSheet(sheetName, tableContainer);
+        });
+        
+        // After rendering, switch to the correct initial view
+        switchSheet(currentSheetName, true);
+
       } catch (err) {
         console.error("Failed to render data:", err);
         alert("An error occurred while loading the data. Please check the console for more details and try refreshing the page.");
       } finally {
         loadingOverlay.style.display = 'none';
       }
+    }
+
+    function renderCurrentSheet() {
+        // This function is now a lightweight wrapper to re-render just the current sheet after edits.
+        const tableContainer = document.getElementById('table-container');
+        document.getElementById(`sheet-${currentSheetName}`)?.parentElement.remove();
+        renderSheet(currentSheetName, tableContainer);
+        updateSortIndicators(); // Apply indicators if table was previously sorted
     }
 
     // ---- UPDATE CELL ----
@@ -860,20 +892,31 @@
       });
     }
 
-    function switchSheet(sheetName) {
-      // Update the config to point to the new sheet
+    function switchSheet(sheetName, isInitialLoad = false) {
       currentSheetName = sheetName;
 
       // Update the active state on the buttons
       document.querySelectorAll('#sheet-selector button').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.sheet === sheetName);
       });
+      
+      // Hide all table wrappers
+      document.querySelectorAll('#table-container .table-wrapper').forEach(wrapper => {
+        wrapper.style.display = 'none';
+      });
 
-      // Reset sorting state
-      sortState = { columnIndex: null, direction: 'asc' };
+      // Show the correct one
+      const activeWrapper = document.getElementById(`sheet-${sheetName}`)?.parentElement;
+      if (activeWrapper) {
+        activeWrapper.style.display = 'flex';
+      }
 
-      // Reload data from the new sheet
-      renderCurrentSheet();
+      // Update item count display
+      const values = allData[currentSheetName] || [];
+      totalItemCount = values.length > 0 ? values.length - 1 : 0;
+      document.getElementById('table-info').textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
+
+      if (!isInitialLoad) applyFilters(); // Re-apply filters for the new view
     }
 
     // ---- SORTING ----
