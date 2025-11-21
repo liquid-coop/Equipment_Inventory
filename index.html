@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>TL Equipment Inventory</title>
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/btoa@1.2.1/btoa.js"></script> <!-- For Base64 encoding in browsers -->
+  <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/liquid-coop/equipment-checkout/main/favicon.ico">
   <style>
     html {
       height: 100vh;
@@ -337,14 +336,12 @@
     </div>
     <h1 class="page-title">Equipment Inventory</h1>
     <div class="button-container">
-      <button id="signin">Sign in</button>
-      <button id="signout" style="display:none">Sign out</button>
-      <button id="refresh" style="display:none" onclick="loadData()">Refresh</button>
+      <button id="refresh" onclick="loadData()">Refresh</button>
     </div>
   </header>
 
   <!-- Main app -->
-  <div id="app">
+  <div id="app" style="display: block;">
     <div id="sheet-selector" class="sheet-selector"></div>
     <div id="add-item-container" style="display:none;"></div>
     <div class="controls-container">
@@ -376,25 +373,33 @@
   </div>
 
   <script>
-    // ---- CONFIG ----
-    const CONFIG = {
-      CLIENT_ID: '222790090853-hhcir6632un723qjqs1fn2ulcvrj0u02.apps.googleusercontent.com',
-      SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
-      SPREADSHEET_ID: '1OoZGw6f5qtm--Srnxy41Db-yKrbprWL_PjGxW7PT1z4',
-      RANGE: 'LA', // The default sheet to load on startup
-      SHEETS: ['LA', 'BR', 'NL', 'DE'], // Add your sheet names here
-      TOKEN_KEY: 'gapi_token'
+    // ---- GITHUB CONFIG ----
+    // WARNING: The token below is public and anyone can use it to access your GitHub account.
+    // This is EXTREMELY INSECURE. Revoke this token immediately and generate a new one.
+    // Do NOT commit a file with a real token to a public repository.
+    const GITHUB_CONFIG = {
+      TOKEN: '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', // <-- REVOKE AND REPLACE THIS TOKEN
+      REPO: 'YOUR_USERNAME/YOUR_REPO_NAME', // e.g., 'johnallencooper/equipment-inventory'
+      SHEETS: {
+        'LA': 'inventory-la.csv',
+        'BR': 'inventory-br.csv',
+        'NL': 'inventory-nl.csv',
+        'DE': 'inventory-de.csv'
+      },
+      // The default sheet to load on startup
+      DEFAULT_SHEET: 'LA'
     };
+
+    let currentSheetKey = GITHUB_CONFIG.DEFAULT_SHEET;
 
     const CONSTANTS = {
       PREDEFINED_STATUSES: ['Good', 'Usable', 'Needs Repair', 'Out for Repair', 'Missing']
     };
 
-    let tokenClient;
-    let accessToken;
+    // Global state for the raw data from the CSV
+    let sheetData = { values: [], sha: null };
     let totalItemCount = 0;
     let rowToDelete = null;
-    let sheetIdCache = {}; // To cache sheet IDs for delete operations
     let sortState = {
       columnIndex: null,
       direction: 'asc' // 'asc' or 'desc'
@@ -402,112 +407,22 @@
     let originalHeaders = [];
 
     // ---- GAPI & GIS INITIALIZATION ----
-    // Entry point is to wait for gapi to be ready, then initialize.
-    gapi.load('client', initializeGapiClient);
-
-    function waitForGis(timeoutMs = 8000) {
-      return new Promise((resolve, reject) => {
-        const start = Date.now();
-        (function check() {
-          if (window.google?.accounts?.oauth2) return resolve();
-          if (Date.now() - start > timeoutMs) return reject(new Error('GIS failed to load'));
-          setTimeout(check, 50);
-        })();
-      });
-    }
-
-    async function initializeGapiClient() {
-      // 1) GAPI client is loaded via gapi.load('client',...)
-      // We will use gapi.client.request for all API calls to avoid the slow discovery document load.
-
-      // 2) Ensure Google Identity Services (GIS) is ready to avoid race conditions.
-      await waitForGis();
-
-      // 3) Initialize the OAuth 2.0 Token Client.
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CONFIG.CLIENT_ID,
-        scope: CONFIG.SCOPES,
-        callback: (resp) => {
-          if (resp.error) {
-            console.warn('Token request failed:', resp);
-            // Keep the Sign in button visible for the user to click.
-            return;
-          }
-          accessToken = resp.access_token;
-          const expiresAt = Date.now() + (resp.expires_in || 3600) * 1000;
-          localStorage.setItem(CONFIG.TOKEN_KEY, JSON.stringify({
-            access_token: accessToken,
-            expires_at: expiresAt
-          }));
-          showApp();
-          loadData();
-        },
-      });
-
-      // 4) Try using a cached token first.
-      const stored = JSON.parse(localStorage.getItem(CONFIG.TOKEN_KEY) || 'null');
-      if (stored?.expires_at > Date.now()) {
-        accessToken = stored.access_token;
-        showApp();
+    // ---- INITIALIZATION ----
+    document.addEventListener('DOMContentLoaded', () => {
+        createSheetSelector();
         loadData();
-      } else {
-        // 5) If no valid token, try a silent refresh (no popup) using an existing Google session.
-        // If the browser blocks it (e.g., third-party cookies disabled), this will fail gracefully,
-        // and the user will still see the "Sign in" button.
-        try {
-          tokenClient.requestAccessToken({ prompt: '' }); // An empty prompt is a silent attempt.
-        } catch (e) {
-          console.debug('Silent token attempt failed early:', e);
-        }
-      }
 
-      // 6) Set up button click handlers.
-      document.getElementById('signin').onclick = () => {
-        // The first interactive call should include prompt:'consent' to reliably force the popup.
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-      };
+        // Modal listeners
+        document.getElementById('cancel-delete').onclick = () => {
+            document.getElementById('delete-modal').style.display = 'none';
+            rowToDelete = null;
+        };
 
-      document.getElementById('signout').onclick = () => {
-        if (accessToken) {
-          // Revoke the grant so future silent attempts don’t auto-succeed after signing out.
-          google.accounts.oauth2.revoke(accessToken, () => {});
-        }
-        accessToken = null;
-        localStorage.removeItem(CONFIG.TOKEN_KEY);
-        hideApp();
-      };
-
-      // Modal listeners remain the same.
-      document.getElementById('cancel-delete').onclick = () => {
-        document.getElementById('delete-modal').style.display = 'none';
-        rowToDelete = null;
-      };
-      document.getElementById('confirm-delete').onclick = () => {
-        document.getElementById('delete-modal').style.display = 'none';
-        if (rowToDelete !== null) deleteRow(rowToDelete);
-      };
-    }
-
-    function showApp() {
-      document.getElementById('signin').style.display = 'none';
-      document.getElementById('signout').style.display = 'inline';
-      document.getElementById('refresh').style.display = 'inline';
-      createSheetSelector();
-      document.getElementById('add-item-container').style.display = 'block';
-    }
-
-    function hideApp() {
-      document.getElementById('signin').style.display = 'inline';
-      document.getElementById('signout').style.display = 'none';
-      document.getElementById('refresh').style.display = 'none';
-      document.getElementById('sheet').innerHTML = '';
-      document.getElementById('table-info').innerHTML = '';
-      document.getElementById('searchInput').value = '';
-      document.getElementById('sheet-selector').innerHTML = '';
-      document.getElementById('filter-container').innerHTML = '';
-      document.getElementById('add-item-container').style.display = 'none';
-      document.getElementById('add-item-container').innerHTML = '';
-    }
+        document.getElementById('confirm-delete').onclick = () => {
+            document.getElementById('delete-modal').style.display = 'none';
+            if (rowToDelete !== null) deleteRow(rowToDelete);
+        };
+    });
 
     function getHeaderDisplayText(originalHeader) {
         const headerMap = {
@@ -518,21 +433,47 @@
     }
 
     // ---- FETCH DATA ----
+    // ---- DATA FETCHING & RENDERING ----
     async function loadData() {
-      if (!accessToken) {
-        return;
-      }
       const loadingOverlay = document.getElementById('loading-overlay');
       loadingOverlay.style.display = 'flex';
 
       try {
-        gapi.client.setToken({ access_token: accessToken });
-
-        const res = await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${CONFIG.RANGE}`,
+        const filePath = GITHUB_CONFIG.SHEETS[currentSheetKey];
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.REPO}/contents/${filePath}`, {
+            headers: { 'Authorization': `token ${GITHUB_CONFIG.TOKEN}` }
         });
-        const values = res.result.values || [];
 
+        if (!res.ok) {
+            if (res.status === 404) {
+                // File doesn't exist, treat as empty sheet
+                sheetData = { values: [], sha: null };
+            } else {
+                const error = await res.json();
+                throw new Error(`GitHub API Error: ${error.message}`);
+            }
+        } else {
+            const data = await res.json();
+            // Content is base64 encoded, so we need to decode it
+            const csvContent = atob(data.content);
+            // Basic CSV parsing (assumes no commas within quoted fields)
+            const parsedValues = csvContent.split('\n').map(row => row.split(','));
+            sheetData = { values: parsedValues, sha: data.sha };
+        }
+
+        const values = sheetData.values;
+        document.getElementById('add-item-container').style.display = 'block';
+        renderTable(values);
+
+      } catch (err) {
+        console.error("Failed to load data:", err);
+        alert("An error occurred while loading the data. Is the GitHub token and repo name correct? Check the console for details.");
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
+    }
+
+    function renderTable(values) {
         const tableInfo = document.getElementById('table-info');
         const table = document.getElementById('sheet');
         table.innerHTML = ''; // Clear previous content
@@ -541,7 +482,7 @@
         // If there are headers, create the add item form
         if (values.length > 0) {
           originalHeaders = values[0];
-          createAddItemForm(values);
+          createAddItemForm(originalHeaders, values.slice(1));
         }
 
         // Create the filter dropdowns before rendering the table
@@ -555,6 +496,7 @@
 
         // If there's only a header or no data, stop here.
         if (values.length <= 1) return;
+        if (values.length <= 1 || values[0].join('').trim() === '') return;
 
         // Find category column index and unique values for dropdowns
         const headers = values[0];
@@ -563,6 +505,14 @@
         if (categoryIndex !== -1) {
             uniqueCategories = [...new Set(values.slice(1).map(row => row[categoryIndex]).filter(Boolean))].sort();
         }
+
+        // --- PERFORMANCE OPTIMIZATION ---
+        // Pre-build option sets to avoid creating them for every row.
+        const categoryOptionsHTML = uniqueCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        const statusOptions = CONSTANTS.PREDEFINED_STATUSES.map(stat => `<option value="${stat}">${stat}</option>`).join('');
+        const ownerOptions = ['BMC', 'Liquid Media'].map(owner => `<option value="${owner}">${owner}</option>`).join('');
+        // Use a DocumentFragment to build the tbody in memory before attaching to the DOM.
+        const fragment = document.createDocumentFragment();
 
 
         // Create thead and tbody
@@ -603,72 +553,36 @@
         // Data Rows (rest of the data)
         values.slice(1).forEach((row, index) => {
           const tr = document.createElement('tr');
+          tr.dataset.rowIndex = index; // 0-based index of the data row
           // Iterate over headers to ensure a cell is created for every column, even if empty.
           originalHeaders.forEach((header, headerIndex) => {
             const cellValue = row[headerIndex] || ''; // Use empty string for missing cells
             const td = document.createElement('td');
-
-            const lowerCaseHeader = header.toLowerCase();
-            switch (lowerCaseHeader) {
-              case 'quantity':
-                td.classList.add('count-column');
-                break;
-              case 'owner':
-                td.classList.add('owner-column');
-                break;
-              case 'serial number':
-                td.classList.add('serial-column');
-                break;
-            }
+            // Note: Column-specific classes are applied in the header creation loop
 
             if (header.toLowerCase() === 'category') {
               const select = document.createElement('select');
-              select.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
-
-              // Create a combined list of options to avoid duplicates and ensure the current value is present
-              const options = [...uniqueCategories];
-              if (cellValue && !options.includes(cellValue)) {
-                  options.push(cellValue);
-                  options.sort();
-              }
-
-              options.forEach(cat => {
-                  const option = document.createElement('option');
-                  option.value = cat;
-                  option.textContent = cat;
-                  select.appendChild(option);
-              });
-
+              select.innerHTML = categoryOptionsHTML;
               select.value = cellValue;
+              select.onchange = (e) => updateCell(index, headerIndex, e.target.value);
               td.appendChild(select);
             } else if (header.toLowerCase() === 'status') {
               const select = document.createElement('select');
-              select.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
-              CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
-                const option = document.createElement('option');
-                option.value = stat;
-                option.textContent = stat;
-                select.appendChild(option);
-              });
+              select.innerHTML = statusOptions;
               select.value = cellValue;
+              select.onchange = (e) => updateCell(index, headerIndex, e.target.value);
               td.appendChild(select);
             } else if (header.toLowerCase() === 'owner') {
               const select = document.createElement('select');
-              select.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
-              const owners = ['BMC', 'Liquid Media'];
-              owners.forEach(owner => {
-                const option = document.createElement('option');
-                option.value = owner;
-                option.textContent = owner;
-                select.appendChild(option);
-              });
+              select.innerHTML = ownerOptions;
               select.value = cellValue;
+              select.onchange = (e) => updateCell(index, headerIndex, e.target.value);
               td.appendChild(select);
             } else {
               const input = document.createElement('input');
               input.type = 'text';
               input.value = cellValue;
-              input.onchange = (e) => updateCell(index + 2, headerIndex, e.target.value);
+              input.onchange = (e) => updateCell(index, headerIndex, e.target.value);
               td.appendChild(input);
             }
             tr.appendChild(td);
@@ -680,55 +594,62 @@
           const deleteButton = document.createElement('button');
           deleteButton.textContent = 'X';
           deleteButton.className = 'delete-btn';
-          // The sheet row index is `index + 2` (1 for header, 1 for 0-based index)
-          deleteButton.onclick = () => promptDelete(index + 2);
+          deleteButton.onclick = () => promptDelete(index); // Pass 0-based data row index
           actionTd.appendChild(deleteButton);
           tr.appendChild(actionTd);
 
-          tbody.appendChild(tr);
+          fragment.appendChild(tr);
         });
 
+        // Append the entire fragment to the tbody in one operation.
+        tbody.appendChild(fragment);
+
         updateSortIndicators(); // Apply indicators if table was previously sorted
-      } catch (err) {
-        console.error("Failed to load data:", err);
-        alert("An error occurred while loading the data. Please check the console for more details and try refreshing the page.");
-      } finally {
-        loadingOverlay.style.display = 'none';
-      }
     }
 
     // ---- UPDATE CELL ----
-    function columnToLetter(column) {
-      let temp, letter = '';
-      while (column >= 0) {
-        temp = column % 26;
-        letter = String.fromCharCode(temp + 65) + letter;
-        column = Math.floor(column / 26) - 1;
-      }
-      return letter;
+    async function updateCell(dataRowIndex, colIndex, value) {
+      // Update the data in our local state first
+      // The +1 accounts for the header row in our `values` array
+      sheetData.values[dataRowIndex + 1][colIndex] = value;
+      await commitChangesToGitHub(`Update cell at row ${dataRowIndex + 1}`);
     }
 
-    async function updateCell(rowIndex, colIndex, value) {
-      if (!accessToken) {
-        alert('Not signed in. Cannot save changes.');
-        return;
-      }
-
+    // ---- GITHUB API INTERACTION ----
+    async function commitChangesToGitHub(commitMessage) {
       const loadingOverlay = document.getElementById('loading-overlay');
       loadingOverlay.style.display = 'flex';
 
       try {
-        gapi.client.setToken({ access_token: accessToken });
-        const range = `'${CONFIG.RANGE}'!${columnToLetter(colIndex)}${rowIndex}`;
+        // Convert array of arrays back to a CSV string
+        const newCsvContent = sheetData.values.map(row => row.join(',')).join('\n');
+        // Content must be base64 encoded for the GitHub API
+        const encodedContent = btoa(newCsvContent);
 
-        await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${range}`,
-          method: 'PUT',
-          params: { valueInputOption: 'USER_ENTERED' },
-          body: { values: [[value]] }
+        const filePath = GITHUB_CONFIG.SHEETS[currentSheetKey];
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.REPO}/contents/${filePath}`;
+
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: commitMessage,
+                content: encodedContent,
+                sha: sheetData.sha // Must provide the SHA of the file you're replacing
+            })
         });
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(`GitHub API Error: ${error.message}`);
+        }
+        const data = await res.json();
+        sheetData.sha = data.content.sha; // Update the SHA for the next commit
       } catch (err) {
-        console.error(`Error updating cell ${rowIndex}:${colIndex}`, err);
+        console.error('Error committing changes to GitHub:', err);
         alert('Failed to save change. Please refresh and try again. See console for details.');
         loadData(); // Revert UI change on failure
       } finally {
@@ -751,20 +672,9 @@
       addButton.textContent = 'Adding...';
 
       try {
-        gapi.client.setToken({ access_token: accessToken });
-        await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}/values/${CONFIG.RANGE}:append`,
-          method: 'POST',
-          params: {
-            valueInputOption: 'USER_ENTERED',
-            insertDataOption: 'INSERT_ROWS',
-          },
-          body: {
-            values: [newRow],
-          },
-        });
-        alert('Item added successfully!');
-        loadData(); // Refresh the entire view
+        sheetData.values.push(newRow);
+        await commitChangesToGitHub('Add new item');
+        loadData(); // This will re-render the table with the new row
       } catch (err) {
         console.error('Error adding item:', err);
         alert('Failed to add item. See console for details.');
@@ -774,13 +684,12 @@
     }
 
     function createAddItemForm(values) {
+    function createAddItemForm(headers, dataRows) {
       const container = document.getElementById('add-item-container');
       container.innerHTML = ''; // Clear previous form
 
-      if (values.length === 0) return;
-      const headers = values[0];
-      const dataRows = values.slice(1);
-
+      if (!headers || headers.length === 0) return;
+      
       const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
       let uniqueCategories = [];
       if (categoryIndex !== -1) {
@@ -900,65 +809,16 @@
       rowToDelete = rowIndex;
       document.getElementById('delete-modal').style.display = 'flex';
     }
-
-    async function getSheetId(sheetName) {
-      if (sheetIdCache[sheetName]) return sheetIdCache[sheetName]; // Return from cache if we have it
-
+    
+    async function deleteRow(dataRowIndex) {
       try {
-        gapi.client.setToken({ access_token: accessToken });
-        const response = await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}`,
-        });
-
-        const sheet = response.result.sheets.find(s => s.properties.title === sheetName);
-        if (sheet) {
-          sheetIdCache[sheetName] = sheet.properties.sheetId;
-          return sheetIdCache[sheetName];
-        } else {
-          throw new Error(`Sheet with name "${sheetName}" not found.`);
-        }
-      } catch (err) {
-        console.error('Error fetching sheet metadata:', err);
-        throw err; // Re-throw the error to be caught by the caller
-      }
-    }
-
-    async function deleteRow(rowIndex) {
-      if (!accessToken) return;
-
-      const confirmBtn = document.getElementById('confirm-delete');
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Deleting...';
-
-      try {
-        const currentSheetId = await getSheetId(CONFIG.RANGE); // e.g. 'LA'
-
-        await gapi.client.request({
-          path: `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SPREADSHEET_ID}:batchUpdate`,
-          method: 'POST',
-          body: {
-            requests: [{
-              deleteDimension: {
-                range: {
-                  sheetId: currentSheetId,
-                  dimension: 'ROWS',
-                  // API is 0-based, sheet rows are 1-based. So we need rowIndex - 1.
-                  startIndex: rowIndex - 1,
-                  endIndex: rowIndex
-                }
-              }
-            }]
-          }
-        });
-        alert('Item deleted successfully!');
-        loadData(); // Refresh the view
+        // The +1 accounts for the header row in our `values` array
+        sheetData.values.splice(dataRowIndex + 1, 1);
+        await commitChangesToGitHub(`Delete row ${dataRowIndex + 1}`);
+        loadData();
       } catch (err) {
         console.error('Error deleting row:', err);
         alert('Failed to delete item. See console for details.');
-      } finally {
-        rowToDelete = null;
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Delete';
       }
     }
 
@@ -967,12 +827,12 @@
       const container = document.getElementById('sheet-selector');
       container.innerHTML = ''; // Clear existing buttons
 
-      CONFIG.SHEETS.forEach(sheetName => {
+      Object.keys(GITHUB_CONFIG.SHEETS).forEach(sheetName => {
         const button = document.createElement('button');
         button.textContent = sheetName;
         button.dataset.sheet = sheetName;
         button.onclick = () => switchSheet(sheetName);
-        if (sheetName === CONFIG.RANGE) {
+        if (sheetName === currentSheetKey) {
           button.classList.add('active');
         }
         container.appendChild(button);
@@ -981,7 +841,7 @@
 
     function switchSheet(sheetName) {
       // Update the config to point to the new sheet
-      CONFIG.RANGE = sheetName;
+      currentSheetKey = sheetName;
 
       // Update the active state on the buttons
       document.querySelectorAll('#sheet-selector button').forEach(btn => {
