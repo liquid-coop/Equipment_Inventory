@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>TL Equipment Inventory</title>
-  <script src="https://cdn.jsdelivr.net/npm/btoa@1.2.1/btoa.js"></script> <!-- For Base64 encoding in browsers -->
-  <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/liquid-coop/equipment-checkout/main/favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <style>
     html {
       height: 100vh;
@@ -282,6 +281,10 @@
       text-align: center;
       max-width: 400px;
     }
+    .table-container {
+      flex-grow: 1;
+      position: relative; /* For absolute positioning of tables */
+    }
     .modal-content h3 {
       margin-top: 0;
       color: #EEEEEE;
@@ -336,12 +339,13 @@
     </div>
     <h1 class="page-title">Equipment Inventory</h1>
     <div class="button-container">
-      <button id="refresh" onclick="loadData()">Refresh</button>
+      <button id="refresh-btn" onclick="loadData()">Refresh</button>
+      <button id="save-data-btn" style="display:none" class="unsaved">Save Changes</button>
     </div>
   </header>
 
   <!-- Main app -->
-  <div id="app" style="display: block;">
+  <div id="app">
     <div id="sheet-selector" class="sheet-selector"></div>
     <div id="add-item-container" style="display:none;"></div>
     <div class="controls-container">
@@ -349,8 +353,8 @@
       <div id="filter-container" class="filter-container"></div>
     </div>
     <div id="table-info"></div>
-    <div class="table-wrapper">
-      <table id="sheet"></table>
+    <div id="table-container" class="table-container">
+      <!-- Tables for each sheet will be injected here -->
     </div>
   </div>
 
@@ -374,30 +378,25 @@
 
   <script>
     // ---- GITHUB CONFIG ----
-    // WARNING: The token below is public and anyone can use it to access your GitHub account.
-    // This is EXTREMELY INSECURE. Revoke this token immediately and generate a new one.
-    // Do NOT commit a file with a real token to a public repository.
+    // WARNING: This is EXTREMELY INSECURE. Revoke this token and generate a new one.
     const GITHUB_CONFIG = {
       TOKEN: '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', // <-- REVOKE AND REPLACE THIS TOKEN
       REPO: 'YOUR_USERNAME/YOUR_REPO_NAME', // e.g., 'johnallencooper/equipment-inventory'
-      SHEETS: {
-        'LA': 'inventory-la.csv',
-        'BR': 'inventory-br.csv',
-        'NL': 'inventory-nl.csv',
-        'DE': 'inventory-de.csv'
-      },
-      // The default sheet to load on startup
-      DEFAULT_SHEET: 'LA'
+      FILE_PATH: 'database.csv' // The single CSV file in your repo
     };
-
-    let currentSheetKey = GITHUB_CONFIG.DEFAULT_SHEET;
 
     const CONSTANTS = {
       PREDEFINED_STATUSES: ['Good', 'Usable', 'Needs Repair', 'Out for Repair', 'Missing']
     };
 
-    // Global state for the raw data from the CSV
-    let sheetData = { values: [], sha: null };
+    // Global state
+    let dataState = {
+      sha: null // The SHA of the file from GitHub, needed for updates
+    };
+    let allData = {}; // Will hold data for all sheets, e.g., { LA: [...], BR: [...] }
+    let currentSheetName = 'LA';
+    let availableSheets = [];
+
     let totalItemCount = 0;
     let rowToDelete = null;
     let sortState = {
@@ -406,24 +405,140 @@
     };
     let originalHeaders = [];
 
-    // ---- GAPI & GIS INITIALIZATION ----
     // ---- INITIALIZATION ----
     document.addEventListener('DOMContentLoaded', () => {
-        createSheetSelector();
-        loadData();
+      loadData(); // Load data from GitHub on page load
+      document.getElementById('save-data-btn').addEventListener('click', commitChangesToGitHub);
+        document.getElementById('delete-modal').style.display = 'none';
+        rowToDelete = null;
+      };
 
-        // Modal listeners
-        document.getElementById('cancel-delete').onclick = () => {
-            document.getElementById('delete-modal').style.display = 'none';
-            rowToDelete = null;
-        };
-
-        document.getElementById('confirm-delete').onclick = () => {
-            document.getElementById('delete-modal').style.display = 'none';
-            if (rowToDelete !== null) deleteRow(rowToDelete);
-        };
+      document.getElementById('confirm-delete').onclick = () => {
+        document.getElementById('delete-modal').style.display = 'none';
+        if (rowToDelete !== null) deleteRow(rowToDelete);
+      };
     });
 
+    function processCsvData(csvString) {
+      Papa.parse(csvString, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+              if (!results.data.length || !results.meta.fields.includes('location')) {
+                  alert('Invalid CSV format from GitHub. Make sure the file is a valid CSV and contains a "location" column.');
+                  return;
+              }
+
+              const newData = {};
+              const headersWithoutLocation = results.meta.fields.filter(h => h !== 'location');
+
+              results.data.forEach(row => {
+                  const location = row.location;
+                  if (!location) return;
+
+                  if (!newData[location]) {
+                      newData[location] = [headersWithoutLocation];
+                  }
+                  
+                  const rowData = headersWithoutLocation.map(header => row[header] || '');
+                  newData[location].push(rowData);
+              });
+
+              allData = newData;
+              availableSheets = Object.keys(allData).sort();
+              currentSheetName = availableSheets[0] || 'LA';
+
+              document.getElementById('add-item-container').style.display = 'block';
+
+              createSheetSelector();
+              renderAllSheets();
+          },
+          error: (error) => {
+              alert('Error parsing CSV file from GitHub.');
+              console.error("CSV Parse Error:", error);
+          }
+      });
+    }
+
+    async function loadData() {
+      const loadingOverlay = document.getElementById('loading-overlay');
+      loadingOverlay.style.display = 'flex';
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.REPO}/contents/${GITHUB_CONFIG.FILE_PATH}`, {
+            headers: { 'Authorization': `token ${GITHUB_CONFIG.TOKEN}` }
+        });
+
+        if (!res.ok) {
+            if (res.status === 404) {
+                alert('database.csv not found in the repository. Please create it.');
+                allData = {}; // Start with empty data
+                dataState.sha = null;
+            } else {
+                throw new Error(`GitHub API Error: ${(await res.json()).message}`);
+            }
+        } else {
+            const data = await res.json();
+            dataState.sha = data.sha;
+            const csvContent = atob(data.content); // Decode from base64
+            processCsvData(csvContent);
+        }
+      } catch (err) {
+        alert(`Failed to load data from GitHub: ${err.message}`);
+        console.error(err);
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
+    }
+
+    function prepareDataForSave() {
+        const flatData = [];
+        for (const location in allData) {
+            const headers = allData[location][0];
+            const rows = allData[location].slice(1);
+            rows.forEach(row => {
+                const rowObject = { location };
+                headers.forEach((header, index) => rowObject[header] = row[index]);
+                flatData.push(rowObject);
+            });
+        }
+        return Papa.unparse(flatData);
+    }
+
+    async function commitChangesToGitHub() {
+      const saveBtn = document.getElementById('save-data-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const newCsvContent = prepareDataForSave();
+        const encodedContent = btoa(newCsvContent); // Base64 encode
+
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.REPO}/contents/${GITHUB_CONFIG.FILE_PATH}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: 'Update inventory via web app',
+                content: encodedContent,
+                sha: dataState.sha // Must provide the SHA of the file you're replacing
+            })
+        });
+
+        if (!res.ok) throw new Error(`GitHub API Error: ${(await res.json()).message}`);
+        
+        const data = await res.json();
+        dataState.sha = data.content.sha; // Update SHA for the next commit
+        saveBtn.classList.remove('unsaved');
+        saveBtn.textContent = 'Save Changes';
+        alert('Changes saved successfully to GitHub!');
+      } catch (err) {
+        alert(`Failed to save changes to GitHub: ${err.message}`);
+        console.error(err);
+      }
+      saveBtn.disabled = false;
+    }
     function getHeaderDisplayText(originalHeader) {
         const headerMap = {
             'Quantity': '#',
@@ -433,70 +548,31 @@
     }
 
     // ---- FETCH DATA ----
-    // ---- DATA FETCHING & RENDERING ----
-    async function loadData() {
-      const loadingOverlay = document.getElementById('loading-overlay');
-      loadingOverlay.style.display = 'flex';
-
-      try {
-        const filePath = GITHUB_CONFIG.SHEETS[currentSheetKey];
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.REPO}/contents/${filePath}`, {
-            headers: { 'Authorization': `token ${GITHUB_CONFIG.TOKEN}` }
-        });
-
-        if (!res.ok) {
-            if (res.status === 404) {
-                // File doesn't exist, treat as empty sheet
-                sheetData = { values: [], sha: null };
-            } else {
-                const error = await res.json();
-                throw new Error(`GitHub API Error: ${error.message}`);
-            }
-        } else {
-            const data = await res.json();
-            // Content is base64 encoded, so we need to decode it
-            const csvContent = atob(data.content);
-            // Basic CSV parsing (assumes no commas within quoted fields)
-            const parsedValues = csvContent.split('\n').map(row => row.split(','));
-            sheetData = { values: parsedValues, sha: data.sha };
-        }
-
-        const values = sheetData.values;
-        document.getElementById('add-item-container').style.display = 'block';
-        renderTable(values);
-
-      } catch (err) {
-        console.error("Failed to load data:", err);
-        alert("An error occurred while loading the data. Is the GitHub token and repo name correct? Check the console for details.");
-      } finally {
-        loadingOverlay.style.display = 'none';
-      }
-    }
-
-    function renderTable(values) {
-        const tableInfo = document.getElementById('table-info');
-        const table = document.getElementById('sheet');
-        table.innerHTML = ''; // Clear previous content
-        tableInfo.innerHTML = ''; // Clear previous info
-
-        // If there are headers, create the add item form
+    function renderSheet(sheetName, container) {
+      const values = allData[sheetName] || [];
+      
+      // If there are headers, create the add item form (only for the first active sheet)
         if (values.length > 0) {
           originalHeaders = values[0];
-          createAddItemForm(originalHeaders, values.slice(1));
+          createAddItemForm(values);
         }
 
         // Create the filter dropdowns before rendering the table
         createFilterDropdowns(values);
-
-        // Display item count. The first row is the header.
-        totalItemCount = values.length > 0 ? values.length - 1 : 0;
-        if (totalItemCount >= 0) {
-          tableInfo.textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
-        }
-
-        // If there's only a header or no data, stop here.
-        if (values.length <= 1) return;
-        if (values.length <= 1 || values[0].join('').trim() === '') return;
+        
+        const table = document.createElement('table');
+        table.id = `sheet-${sheetName}`;
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        
+        const tableWrapper = document.createElement('div');
+        tableWrapper.className = 'table-wrapper';
+        tableWrapper.style.position = 'absolute';
+        tableWrapper.style.top = '0';
+        tableWrapper.style.left = '0';
+        tableWrapper.style.right = '0';
+        tableWrapper.style.bottom = '0';
+        tableWrapper.appendChild(table);
 
         // Find category column index and unique values for dropdowns
         const headers = values[0];
@@ -506,13 +582,11 @@
             uniqueCategories = [...new Set(values.slice(1).map(row => row[categoryIndex]).filter(Boolean))].sort();
         }
 
-        // --- PERFORMANCE OPTIMIZATION ---
-        // Pre-build option sets to avoid creating them for every row.
-        const categoryOptionsHTML = uniqueCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-        const statusOptions = CONSTANTS.PREDEFINED_STATUSES.map(stat => `<option value="${stat}">${stat}</option>`).join('');
-        const ownerOptions = ['BMC', 'Liquid Media'].map(owner => `<option value="${owner}">${owner}</option>`).join('');
-        // Use a DocumentFragment to build the tbody in memory before attaching to the DOM.
-        const fragment = document.createDocumentFragment();
+        // If there's only a header or no data, just append the empty wrapper and stop.
+        if (values.length <= 1) {
+            container.appendChild(tableWrapper);
+            return;
+        }
 
 
         // Create thead and tbody
@@ -553,36 +627,72 @@
         // Data Rows (rest of the data)
         values.slice(1).forEach((row, index) => {
           const tr = document.createElement('tr');
-          tr.dataset.rowIndex = index; // 0-based index of the data row
           // Iterate over headers to ensure a cell is created for every column, even if empty.
           originalHeaders.forEach((header, headerIndex) => {
             const cellValue = row[headerIndex] || ''; // Use empty string for missing cells
             const td = document.createElement('td');
-            // Note: Column-specific classes are applied in the header creation loop
+
+            const lowerCaseHeader = header.toLowerCase();
+            switch (lowerCaseHeader) {
+              case 'quantity':
+                td.classList.add('count-column');
+                break;
+              case 'owner':
+                td.classList.add('owner-column');
+                break;
+              case 'serial number':
+                td.classList.add('serial-column');
+                break;
+            }
 
             if (header.toLowerCase() === 'category') {
               const select = document.createElement('select');
-              select.innerHTML = categoryOptionsHTML;
+              select.onchange = (e) => updateCell(index + 1, headerIndex, e.target.value);
+
+              // Create a combined list of options to avoid duplicates and ensure the current value is present
+              const options = [...uniqueCategories];
+              if (cellValue && !options.includes(cellValue)) {
+                  options.push(cellValue);
+                  options.sort();
+              }
+
+              options.forEach(cat => {
+                  const option = document.createElement('option');
+                  option.value = cat;
+                  option.textContent = cat;
+                  select.appendChild(option);
+              });
+
               select.value = cellValue;
-              select.onchange = (e) => updateCell(index, headerIndex, e.target.value);
               td.appendChild(select);
             } else if (header.toLowerCase() === 'status') {
               const select = document.createElement('select');
-              select.innerHTML = statusOptions;
+              select.onchange = (e) => updateCell(index + 1, headerIndex, e.target.value);
+              CONSTANTS.PREDEFINED_STATUSES.forEach(stat => {
+                const option = document.createElement('option');
+                option.value = stat;
+                option.textContent = stat;
+                select.appendChild(option);
+              });
               select.value = cellValue;
-              select.onchange = (e) => updateCell(index, headerIndex, e.target.value);
               td.appendChild(select);
             } else if (header.toLowerCase() === 'owner') {
               const select = document.createElement('select');
-              select.innerHTML = ownerOptions;
+              select.onchange = (e) => updateCell(index + 1, headerIndex, e.target.value);
+              const owners = ['BMC', 'Liquid Media'];
+              owners.forEach(owner => {
+                const option = document.createElement('option');
+                option.value = owner;
+                option.textContent = owner;
+                select.appendChild(option);
+              });
               select.value = cellValue;
-              select.onchange = (e) => updateCell(index, headerIndex, e.target.value);
               td.appendChild(select);
             } else {
               const input = document.createElement('input');
               input.type = 'text';
               input.value = cellValue;
-              input.onchange = (e) => updateCell(index, headerIndex, e.target.value);
+              input.onchange = (e) => updateCell(index + 1, headerIndex, e.target.value);
               td.appendChild(input);
             }
             tr.appendChild(td);
@@ -594,71 +704,62 @@
           const deleteButton = document.createElement('button');
           deleteButton.textContent = 'X';
           deleteButton.className = 'delete-btn';
-          deleteButton.onclick = () => promptDelete(index); // Pass 0-based data row index
+          // The data row index is `index + 1` (since we sliced the header)
+          deleteButton.onclick = () => promptDelete(index + 1);
           actionTd.appendChild(deleteButton);
           tr.appendChild(actionTd);
 
-          fragment.appendChild(tr);
+          tbody.appendChild(tr);
         });
 
-        // Append the entire fragment to the tbody in one operation.
-        tbody.appendChild(fragment);
-
-        updateSortIndicators(); // Apply indicators if table was previously sorted
+        container.appendChild(tableWrapper);
     }
 
-    // ---- UPDATE CELL ----
-    async function updateCell(dataRowIndex, colIndex, value) {
-      // Update the data in our local state first
-      // The +1 accounts for the header row in our `values` array
-      sheetData.values[dataRowIndex + 1][colIndex] = value;
-      await commitChangesToGitHub(`Update cell at row ${dataRowIndex + 1}`);
-    }
-
-    // ---- GITHUB API INTERACTION ----
-    async function commitChangesToGitHub(commitMessage) {
+    function renderAllSheets() {
       const loadingOverlay = document.getElementById('loading-overlay');
       loadingOverlay.style.display = 'flex';
+      
+      const tableContainer = document.getElementById('table-container');
+      tableContainer.innerHTML = ''; // Clear all old tables
 
       try {
-        // Convert array of arrays back to a CSV string
-        const newCsvContent = sheetData.values.map(row => row.join(',')).join('\n');
-        // Content must be base64 encoded for the GitHub API
-        const encodedContent = btoa(newCsvContent);
-
-        const filePath = GITHUB_CONFIG.SHEETS[currentSheetKey];
-        const url = `https://api.github.com/repos/${GITHUB_CONFIG.REPO}/contents/${filePath}`;
-
-        const res = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${GITHUB_CONFIG.TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: commitMessage,
-                content: encodedContent,
-                sha: sheetData.sha // Must provide the SHA of the file you're replacing
-            })
+        availableSheets.forEach(sheetName => {
+            renderSheet(sheetName, tableContainer);
         });
+        
+        // After rendering, switch to the correct initial view
+        switchSheet(currentSheetName, true);
 
-        if (!res.ok) {
-            const error = await res.json();
-            throw new Error(`GitHub API Error: ${error.message}`);
-        }
-        const data = await res.json();
-        sheetData.sha = data.content.sha; // Update the SHA for the next commit
       } catch (err) {
-        console.error('Error committing changes to GitHub:', err);
-        alert('Failed to save change. Please refresh and try again. See console for details.');
-        loadData(); // Revert UI change on failure
+        console.error("Failed to render data:", err);
+        alert("An error occurred while loading the data. Please check the console for more details and try refreshing the page.");
       } finally {
         loadingOverlay.style.display = 'none';
       }
     }
 
+    function renderCurrentSheet() {
+        // This function is now a lightweight wrapper to re-render just the current sheet after edits.
+        const tableContainer = document.getElementById('table-container');
+        document.getElementById(`sheet-${currentSheetName}`)?.parentElement.remove();
+        renderSheet(currentSheetName, tableContainer);
+        updateSortIndicators(); // Apply indicators if table was previously sorted
+    }
+
+    // ---- UPDATE CELL ----
+    function updateCell(rowIndex, colIndex, value) {
+      // rowIndex is 1-based for data rows (header is row 0)
+      if (allData[currentSheetName] && allData[currentSheetName][rowIndex]) {
+        allData[currentSheetName][rowIndex][colIndex] = value;
+      }
+      const saveBtn = document.getElementById('save-data-btn');
+      saveBtn.style.display = 'inline';
+      // No need to re-render, the input field holds the state.
+      // We could add a "dirty" flag to the save button here if desired.
+    }
+
     // ---- ADD ITEM ----
-    async function addItem() {
+    function addItem() {
       const addButton = document.querySelector('.add-item-form button');
       const fields = document.querySelectorAll('.add-item-form input[type="text"], .add-item-form select');
       const newRow = Array.from(fields).map(field => field.value);
@@ -671,25 +772,23 @@
       addButton.disabled = true;
       addButton.textContent = 'Adding...';
 
-      try {
-        sheetData.values.push(newRow);
-        await commitChangesToGitHub('Add new item');
-        loadData(); // This will re-render the table with the new row
-      } catch (err) {
-        console.error('Error adding item:', err);
-        alert('Failed to add item. See console for details.');
-        addButton.disabled = false;
-        addButton.textContent = 'Add Item';
-      }
+      allData[currentSheetName].push(newRow);
+      const saveBtn = document.getElementById('save-data-btn');
+      saveBtn.style.display = 'inline';
+      alert('Item added to the list. Click "Save Changes" to commit to GitHub.');
+      renderCurrentSheet(); // Refresh the entire view
+      addButton.disabled = false;
+      addButton.textContent = 'Add Item';
     }
 
     function createAddItemForm(values) {
-    function createAddItemForm(headers, dataRows) {
       const container = document.getElementById('add-item-container');
       container.innerHTML = ''; // Clear previous form
 
-      if (!headers || headers.length === 0) return;
-      
+      if (values.length === 0) return;
+      const headers = values[0];
+      const dataRows = values.slice(1);
+
       const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
       let uniqueCategories = [];
       if (categoryIndex !== -1) {
@@ -810,16 +909,23 @@
       document.getElementById('delete-modal').style.display = 'flex';
     }
     
-    async function deleteRow(dataRowIndex) {
-      try {
-        // The +1 accounts for the header row in our `values` array
-        sheetData.values.splice(dataRowIndex + 1, 1);
-        await commitChangesToGitHub(`Delete row ${dataRowIndex + 1}`);
-        loadData();
-      } catch (err) {
-        console.error('Error deleting row:', err);
-        alert('Failed to delete item. See console for details.');
-      }
+    function deleteRow(rowIndex) {
+      const confirmBtn = document.getElementById('confirm-delete');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Deleting...';
+
+      // rowIndex is 1-based for data rows. The array is 0-based.
+      // allData[currentSheetName] includes the header row, so the index matches.
+      allData[currentSheetName].splice(rowIndex, 1);
+
+      const saveBtn = document.getElementById('save-data-btn');
+      saveBtn.style.display = 'inline';
+      alert('Item removed from the list. Click "Save Changes" to commit to GitHub.');
+      renderCurrentSheet(); // Refresh the view
+
+      rowToDelete = null;
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Delete';
     }
 
     // ---- SHEET SWITCHING ----
@@ -827,32 +933,43 @@
       const container = document.getElementById('sheet-selector');
       container.innerHTML = ''; // Clear existing buttons
 
-      Object.keys(GITHUB_CONFIG.SHEETS).forEach(sheetName => {
+      availableSheets.forEach(sheetName => {
         const button = document.createElement('button');
         button.textContent = sheetName;
         button.dataset.sheet = sheetName;
-        button.onclick = () => switchSheet(sheetName);
-        if (sheetName === currentSheetKey) {
+        button.onclick = () => switchSheet(sheetName); 
+        if (sheetName === currentSheetName) {
           button.classList.add('active');
         }
         container.appendChild(button);
       });
     }
 
-    function switchSheet(sheetName) {
-      // Update the config to point to the new sheet
-      currentSheetKey = sheetName;
+    function switchSheet(sheetName, isInitialLoad = false) {
+      currentSheetName = sheetName;
 
       // Update the active state on the buttons
       document.querySelectorAll('#sheet-selector button').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.sheet === sheetName);
       });
+      
+      // Hide all table wrappers
+      document.querySelectorAll('#table-container .table-wrapper').forEach(wrapper => {
+        wrapper.style.display = 'none';
+      });
 
-      // Reset sorting state
-      sortState = { columnIndex: null, direction: 'asc' };
+      // Show the correct one
+      const activeWrapper = document.getElementById(`sheet-${sheetName}`)?.parentElement;
+      if (activeWrapper) {
+        activeWrapper.style.display = 'flex';
+      }
 
-      // Reload data from the new sheet
-      loadData();
+      // Update item count display
+      const values = allData[currentSheetName] || [];
+      totalItemCount = values.length > 0 ? values.length - 1 : 0;
+      document.getElementById('table-info').textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
+
+      if (!isInitialLoad) applyFilters(); // Re-apply filters for the new view
     }
 
     // ---- SORTING ----
