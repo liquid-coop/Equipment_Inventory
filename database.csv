@@ -10,7 +10,7 @@ LA,CLOUDLIFTER CL-1,Cloud Microphones,CL-1,Audio,Missing,BMC,1,S201004569BI8,,
 LA,CLOUDLIFTER CL-1,Cloud Microphones,CL-1,Audio,Missing,BMC,1,S191100268B3L,,
 LA,CLOUDLIFTER CL-1,Cloud Microphones,CL-1,Audio,Missing,BMC,1,980714,,
 LA,KTEC AVALON KEG-88CC,KTEC,AVALON KEG-88CC,Audio,Missing,BMC,1,,,
-LA,NICAMA NC-MR W/BLIMP,NICAMA,NC-MR,Audio,Good,BMC,1,,,
+LA,NICAMA NC-MR W/BLIMP,NICAMA,NC-MR,Audio,Missing,BMC,1,,,
 LA,Senheiser MKE600 [2],Senheiser,MKE600,Audio,Missing,BMC,1,BN211905302BG,,
 LA,Shure SM-58 Microphone Kit [1],Shure,SM-58 Microphone Kit,Audio,Good,BMC,1,3RI2684420,,
 LA,Shure SM-58 Microphone Kit [2],Shure,SM-58 Microphone Kit,Audio,Good,BMC,1,3QK1837921,,
@@ -20,7 +20,7 @@ LA,Shure SM7B [3],Shure,SM7B,Audio,Missing,BMC,1,4524159281,,
 LA,Sony URX-B40 LAV Transmitter & Receiver [2],Sony,URX-B40,Audio,Missing,BMC,1,100176,Monitor,
 LA,Sony XLR-A2M,Sony,XLR-A2M,Audio,Missing,BMC,1,3000947,,
 LA,Sony XLR-H1,Sony,XLRH1 X,Audio,Good,BMC,1,,,
-LA,Sony XLR- H1 ,Sony,XLR-K2M XLR Adapter Kit,Audio,Needs Repair,BMC,1,100177,,Bottom is broken 
+LA,"Sony XLR- H1 ",Sony,XLR-K2M XLR Adapter Kit,Audio,Needs Repair,BMC,1,100177,,"Bottom is broken "
 LA,Sound Devices MixPre-6 Field Recorder,Sound Devices,MixPre-6,Audio,Missing,BMC,1,TH0721139277,,
 LA,STEINBERG UR22C,STEINBERG,UR22C,Audio,Missing,BMC,1,YEAM05343,,
 LA,Ultimate Support MC 125 #1,Ultimate Support,MC 125,Audio,Missing,BMC,1,AF12-000366-01,,
@@ -28,10 +28,10 @@ LA,Ultimate Support MC 125 #2,Ultimate Support,MC 125,Audio,Missing,BMC,1,AI01-0
 LA,Rode Link LAV Transmitter & Receiver,Rode,Link LAV,Audio/Audio Lavs,Missing,BMC,1,CT0003158,,
 LA,Rode RX/TX Packs,Rode,RX/TX Packs,Audio/Audio Lavs,Missing,BMC,1,TPDN003877968,,
 LA,Sennheiser SK 100 G4 Transmitter,Sennheiser,SK 100 G4,Audio/Audio Lavs,Good,BMC,1,5163163190 | 5393101764,,
-LA,Sennheiser SK 100 G4 Transmitter ,Sennheiser,SK 100 G4,Audio/Audio Lavs,Good,BMC,1,5134175922 | 5373101245,,
+LA,"Sennheiser SK 100 G4 Transmitter ",Sennheiser,SK 100 G4,Audio/Audio Lavs,Good,BMC,1,5134175922 | 5373101245,,
 LA,Sennheiser SK-100 LAV G3 Transmitter,Sennheiser,SK 100 G3,Audio/Audio Lavs,Good,BMC,1,4336208974,,
 LA,Sennheiser SK-100 G3  Transmitter,Sennheiser,SK 100 G3,Audio/Audio Lavs,Good,BMC,1,4524159281,,
-LA,Sennheiser EK-100 LAV  Receiver ,Sennheiser,EK 100,Audio/Audio Lavs,Good,BMC,1,4524101424,,
+LA,"Sennheiser EK-100 LAV  Receiver ",Sennheiser,EK 100,Audio/Audio Lavs,Good,BMC,1,4524101424,,
 LA,Sennheiser SK - AVX,Sennheiser,avx,Audio/Audio Lavs,Good,BMC,1,1173206340,,
 LA,Sennheiser SK - AVX,Sennheiser,avx,Audio/Audio Lavs,Good,BMC,1,5074215885,,
 LA,Sennheiser SK - AVX,Sennheiser,avx,Audio/Audio Lavs,Good,BMC,1,1253207594,,
@@ -57,7 +57,7 @@ LA,Core DPA Screet - Lav Mic,Core DPA,Screet - Lav Mic,Audio/Audio Mics,Missing,
 LA,OnStage Gooseneck Microphone,OnStage,Gooseneck Microphone,Audio/Audio Mics,Missing,BMC,1,,,
 LA,Rode NTG4+ (Shotgun) [1],Rode,NTG4+ (Shotgun),Audio/Audio Mics,Good,BMC,1,CQ0005628,,
 LA,Rode Reporter,Rode,Reporter,Audio/Audio Mics,Good,BMC,1,2312,,
-LA,Rode Reporter ,Rode,Reporter,Audio/Audio Mics,Good,BMC,1,2938,,
+LA,"Rode Reporter ",Rode,Reporter,Audio/Audio Mics,Good,BMC,1,2938,,
 LA,Rode VideoMic Pro [2],Rode,VideoMic Pro,Audio/Audio Mics,Good,BMC,1,CR0028289,,
 LA,Rode VideoMic Pro+ [1],Rode,VideoMic Pro+,Audio/Audio Mics,Good,BMC,1,DU0103733,,
 LA,Rode VideoMic Pro+ [2],Rode,VideoMic Pro+,Audio/Audio Mics,Good,BMC,1,DU0103721,,
@@ -132,7 +132,7 @@ LA,Kastar BP-U30 Battery [5],Kastar,BP-U30 Battery,Batteries,Good,BMC,1,,,
 LA,Kastar BP-U60 Battery [8],Kastar,BP-U60 Battery,Batteries,Good,BMC,1,,,
 LA,Kastar  BPU-90,Kastar,BPU-90,Batteries,Good,BMC,1,,,
 LA,Kastar  BPU-90,Kastar,BPU-90,Batteries,Good,BMC,1,,FS7/Fx6,
-LA,Kastar  BPU-90,Kastar,BPU-90,Batteries,Needs Repair,BMC,1,,FS7/Fx6,broken not recharging 
+LA,Kastar  BPU-90,Kastar,BPU-90,Batteries,Needs Repair,BMC,1,,FS7/Fx6,"broken not recharging "
 LA,Kastar  BPU-90,Kastar,BPU-90,Batteries,Missing,BMC,1,,FS7/Fx6,
 LA,NewMowa NP-BX1,NewMowa,NP-BX1,Batteries,Missing,BMC,1,,RX100,
 LA,NewMowa NP-BX1,NewMowa,NP-BX1,Batteries,Missing,BMC,1,,RX100,
@@ -141,9 +141,9 @@ LA,NewMowa NP-BX1,NewMowa,NP-BX1,Batteries,Missing,BMC,1,,RX100,
 LA,PowerExtra NP-BX1,PowerExtra,NP-BX1,Batteries,Missing,BMC,1,,RX100,
 LA,PowerExtra NP-BX1,PowerExtra,NP-BX1,Batteries,Missing,BMC,1,,RX100,
 LA,PowerExtra NP-BX1,PowerExtra,NP-BX1,Batteries,Missing,BMC,1,,RX100,
-LA,Sony BP-U35 Battery ,Sony,BP-U35 Battery,Batteries,Missing,BMC,1,440170,,
+LA,"Sony BP-U35 Battery ",Sony,BP-U35 Battery,Batteries,Missing,BMC,1,440170,,
 LA,Sony BP-U35 Battery [1],Sony,BP-U35 Battery,Batteries,Good,BMC,1,20210625,,
-LA,Sony BP-U35 Battery ,Sony,BP-U35 Battery,Batteries,Good,BMC,1,20210623,,
+LA,"Sony BP-U35 Battery ",Sony,BP-U35 Battery,Batteries,Good,BMC,1,20210623,,
 LA,Sony BP-U60 Battery [1],Sony,BP-U60 Battery,Batteries,Good,BMC,1,20130118,,
 LA,Sony BP-U60 Battery [2],Sony,BP-U60,Batteries,Missing,BMC,1,1301367,,
 LA,Sony BP-U70 Battery [4],Sony,BP-U70 Battery,Batteries,Missing,BMC,1,1019208,A7,
@@ -224,7 +224,7 @@ LA,[LM] Camera Slider,MYT Works Medium Glide,"Camera Slider 3""Rail",Camera Acce
 LA,[LM] Tilta FX6 Camera Cage ADV Kit - V-Mount 001,Tilta,TIEST20BV,Camera Accessories,Missing,Liquid Media,1,K149S9SE51C14,,
 LA,[LM] Tilta FX6 Camera Cage ADV Kit - V-Mount 002,Tilta,TIEST20BV,Camera Accessories,Missing,Liquid Media,1,,,
 LA,Atomos CONNECT,Atomos,CONNECT,Camera Accessories,Missing,BMC,1,K1A9ATCN53H84,,
-LA,Bright Tangerine Misfit Kick 3-Stage Matte Box Kit,Bright Tangerine,Misfit Kick 3-Stage Matte Box Kit,Camera Accessories,Usable,BMC,1,N/A,,missing step up rings 
+LA,Bright Tangerine Misfit Kick 3-Stage Matte Box Kit,Bright Tangerine,Misfit Kick 3-Stage Matte Box Kit,Camera Accessories,Usable,BMC,1,N/A,,"missing step up rings "
 LA,Manfrotto 319H Short Hi Hat Locking Handle,Manfrotto,319H Short Hi Hat Locking Handle (LM),Camera Accessories,Missing,BMC,1,MA319SH,GoPro,
 LA,SanDisk Extreme 64GB - 150MB/s SD,SanDisk,Extreme 64GB 150MB/S,Camera Accessories,Missing,BMC,1,BN211905302BG,,
 LA,"D-TAP Power Cable  for Sony Fx6 ( 15"" 19.5V)",SHAPE,,Camera Accessories,Good,BMC,1,n/a,,
@@ -267,7 +267,7 @@ LA,SONY Tough 128GB #4,Sony,128GB Tough,Camera Accessories/Camera Media,Good,BMC
 LA,SONY Tough 128GB #5,Sony,128GB Tough,Camera Accessories/Camera Media,Missing,BMC,1,EHB2R9S2JJ7PPR,Monitor,Do not have. Gone. Missing. AHAUHDISBFEB
 LA,TRANCEND 64gb 90mbs,TRANCEND,64gb 90mbs,Camera Accessories/Camera Media,Missing,BMC,1,,,
 LA,Metabones EF-E mount [1],Metabones,EF-E mount,Camera Accessories/Lens Mounts,Good,BMC,1,A1014019746,,
-LA,Metabones EF-E mount [2],Metabones,EF-E mount ,Camera Accessories/Lens Mounts,Good,BMC,1,A1014047431,,
+LA,Metabones EF-E mount [2],Metabones,"EF-E mount ",Camera Accessories/Lens Mounts,Good,BMC,1,A1014047431,,
 LA,Metabones EF-E mount Speedbooster [1],Metabones,EF-E mount Speedbooster,Camera Accessories/Lens Mounts,Missing,BMC,1,1012014532,,
 LA,Metabones EF-E mount Speedbooster [2],Metabones,EF-E mount Speedbooster,Camera Accessories/Lens Mounts,Missing,BMC,1,,,
 LA,Tiffen 77mm CPL,Tiffen,77mm CPL,Camera Accessories/Lens Mounts,Missing,BMC,1,,,
@@ -365,7 +365,7 @@ LA,AVENGAR 6x6  Grid W/ EARLOBES,Digital Juice,6x6 Metal Grid,Grip,Good,BMC,1,N/
 LA,Dracast Light Stand,Dracast,Light Stand,Grip,Missing,BMC,1,7673227,,
 LA,"MATTHEWS 40"" C STAND W/ GOBO ARMS & KNUCKLES",Macke,"40"" C stand w/ Gobo + Knocke",Grip,Missing,BMC,1,C3121125196914,,
 LA,Matthews Low Boy Combo Stand,Matthews,Low Boy Combo Stand,Grip,Good,BMC,1,,,
-LA,Matthews Low Boy Combo Stand,Matthews,Low Boy Combo Stand,Grip,Needs Repair,BMC,1,,,tie down is messed up 
+LA,Matthews Low Boy Combo Stand,Matthews,Low Boy Combo Stand,Grip,Needs Repair,BMC,1,,,"tie down is messed up "
 LA,"MATTHEWS 20"" CTAND",Matthews,"20""",Grip,Good,BMC,1,,,
 LA,"MATTHEWS 20"" CTAND",Matthews,"20""",Grip,Good,BMC,1,,FS7/Fx6,
 LA,"MATTHEWS 20"" CTAND",Matthews,"20""",Grip,Good,BMC,1,,FS7/Fx6,
@@ -468,7 +468,7 @@ LA,SLR Magic 35mm f/1.2,SLR Magic,35mm f/1.2,Lenses,Good,BMC,1,,,
 LA,"SLR MAgic 52mm 1:1, 2/35 CINE",SLR MAgic,"52mm 1:1, 2/35 CINE",Lenses,Good,BMC,1,,,
 LA,Sony 28mm E-mount F:2,Sony,28mm E-mount F:2,Lenses,Good,BMC,1,201425,,
 LA,Sony 90mm Prime Macro  2.8,Sony,90mm Prime Macro  2.8,Lenses,Good,BMC,1,1815825,,
-LA,Sony E-mount FE 2.8/24-70 GM [1],Sony,FE 2.8/24-70mm GM,Lenses,Usable,BMC,1,1960440,FS7/Fx6,Minor Cosmetic 
+LA,Sony E-mount FE 2.8/24-70 GM [1],Sony,FE 2.8/24-70mm GM,Lenses,Usable,BMC,1,1960440,FS7/Fx6,"Minor Cosmetic "
 LA,Sony E-mount FE 2.8/24-70 GM [2],Sony,E-mount FE 2.8/24-70 GM,Lenses,Good,BMC,1,1849488,,
 LA,Sony FE 1.4/85mm GM,Sony,FE 1.4/85mm GM,Lenses,Good,BMC,1,1879541,,
 LA,Sony FE 1.8/14mm GM,Sony,FE 1.8/14mm GM,Lenses,Good,BMC,1,1821632,,
@@ -502,7 +502,7 @@ LA,APUTURE DOME #2,Aputure,DOME,Lighting,Needs Repair,BMC,1,N/A,MAGIC FULL DIFF 
 LA,APUTURE F10 #1,Aputure,F10 BARNDOOR,Lighting,Good,BMC,1,6hu00yy13900,,
 LA,APUTURE F10 #2,Aputure,F10 BARNDOOR,Lighting,Good,BMC,1,6Hu02m35581,,
 LA,APUTURE FRESNEL LENS #1,Aputure,FRESNEL LENS,Lighting,Good,BMC,1,N/A,,barn doors
-LA,APUTURE FRESNEL LENS #2,Aputure,FRESNEL LENS,Lighting,Good,BMC,1,N/A,,barn doors 
+LA,APUTURE FRESNEL LENS #2,Aputure,FRESNEL LENS,Lighting,Good,BMC,1,N/A,,"barn doors "
 LA,APUTURE LANTERN,Aputure,LANTERN,Lighting,Good,BMC,1,N/A,,
 LA,APUTURE LENS 19° #1,Aputure,LENS 19°,Lighting,Good,BMC,1,6EC00F29491,,
 LA,APUTURE LENS 19° #2,Aputure,LENS 19°,Lighting,Good,BMC,1,6EC00V29508,,
@@ -520,12 +520,12 @@ LA,ASTERA RGB LED Tube Light #2,Astera,RGB LED Tube Light,Lighting,Good,BMC,1,03
 LA,ASTERA RGB LED Tube Light #3,Astera,RGB LED Tube Light,Lighting,Good,BMC,1,N/A,,
 LA,ASTERA RGB LED Tube Light #4,Astera,RGB LED Tube Light,Lighting,Good,BMC,1,038-0523828,,
 LA,ASTERA TITAN CHARGING CASE,Astera,TITAN CHARGING CASE,Lighting,Good,BMC,1,526-0300600,,
-LA,Dracast 1x1 BI Color 1000 Pro #1,Dracast,1x1 BI Color 1000 Pro,Lighting,Missing,BMC,1,14082A01100034014101014,,Given away/thrown out 
+LA,Dracast 1x1 BI Color 1000 Pro #1,Dracast,1x1 BI Color 1000 Pro,Lighting,Missing,BMC,1,14082A01100034014101014,,"Given away/thrown out "
 LA,Dracast 1x1 BI Color 1000 Pro #2,Drawcast,1x1 BI Color 1000 Pro,Lighting,Missing,BMC,1,14086A01100034014112039,,
 LA,Kino Flo Freestyle 31 #1,Kino Flo,Freestyle 31,Lighting,Good,BMC,1,Ballast: L-3639 | Light: 3041,,
 LA,Kino Flo Freestyle 31 #2,Kino Flo,Freestyle 31,Lighting,Good,BMC,1,Ballast: L-3645 | Light: 3038,,
 LA,PopSpot Ultra 100 BiColor #1,PopSpot,Ultra 100 Bi-Color LED,Lighting,Missing,BMC,1,805000621,,given away
-LA,PopSpot Ultra 100 BiColor #2,PopSpot,Ultra 100 Bi-Color LED,Lighting,Missing,BMC,1,N/A,,given away 
+LA,PopSpot Ultra 100 BiColor #2,PopSpot,Ultra 100 Bi-Color LED,Lighting,Missing,BMC,1,N/A,,"given away "
 LA,Source 4 750 26°,Source 4,750 26 angle,Lighting,Good,BMC,1,N/A,,
 LA,Source 4 750 36°,Source 4,750 26 angle,Lighting,Good,BMC,1,7060A2004-K,,
 LA,Mini Diva LED VLOCK #1,,Mini Diva LED VLOCK,Lighting,Missing,BMC,1,66k10hf1f19947,,
@@ -616,8 +616,8 @@ LA,[LM] DJI OSMO Mobile 7P Smartphone Gimbal,DJI,OSMO Mobile 7P Smartphone Gimba
 LA,[LM] Oben CQL-13 Compact Carbon Fiber Travel Tripod w/ Ball Head,Oben,CQL-13 Compact Carbon Fiber Travel Tripod w/ Ball Head,Tripods,Missing,Liquid Media,1,,,
 LA,[LM] SmallRig ST30 One-Touch Deploy Selfie Stick Tripod (White) 001,SmallRig,ST30 One-Touch Deploy Selfie Stick Tripod (White),Tripods,Missing,Liquid Media,1,54859299,,
 LA,[LM] SmallRig ST30 One-Touch Deploy Selfie Stick Tripod (White) 002,SmallRig,ST30 One-Touch Deploy Selfie Stick Tripod (White),Tripods,Missing,Liquid Media,1,52496093,,
-LA,Sony BP-U35 Battery ,Sony,BP-U35 Battery,Batteries,Good,BMC,1,20220821,,
-LA,Verical Camera Bracket ,wooden camera,vertical bracket ,Camera Accessories,Good,BMC,1,,,
+LA,"Sony BP-U35 Battery ",Sony,BP-U35 Battery,Batteries,Good,BMC,1,20220821,,
+LA,"Verical Camera Bracket ",wooden camera,"vertical bracket ",Camera Accessories,Good,BMC,1,,,
 LA,boom mic,RODE,ntg-2,Audio/Audio Mics,Good,BMC,1,bm0333092,,
 LA,Sennheiser e835,Sennheiser,e835,Audio/Audio Mics,Good,BMC,1,2099A-SKM1G9WE,,
 LA,Sennheiser EKP-AVX,Sennheiser,EKP-AVX,Audio/Audio Lavs,Good,BMC,1,1193219118,,
@@ -627,7 +627,7 @@ LA,Sennheiser EKP-AVX,Sennheiser,EKP-AVX,Audio/Audio Lavs,Good,BMC,1,5054227849,
 LA,Sennheiser EK 100 G4 Receiver,Sennheiser,EK 100 G4,Audio/Audio Lavs,Good,BMC,1,5373101245,,
 LA,Sennheiser EKP-AVX,Sennheiser,EKP AVX,Audio/Audio Lavs,Good,BMC,1,1073217136,,
 LA,Sennheiser SK 100 G4 Transmitter,Sennheiser,SK 100 G4,Audio/Audio Lavs,Good,BMC,1,4069009686,,
-LA,Sennheiser SK 100 G4 Transmitter,Sennheiser,SK 100 G4 ,Audio/Audio Lavs,Good,BMC,1,4199041254,,
+LA,Sennheiser SK 100 G4 Transmitter,Sennheiser,"SK 100 G4 ",Audio/Audio Lavs,Good,BMC,1,4199041254,,
 LA,Alienware AW2524HF Monitor [1],Alienware,AW2524HF,Monitors,Good,BMC,1,CN-0RNR3K-QDC00-36G-080L,,Evan is probably taking
 LA,Alienware AW2725QF Monitor,Alienware,AW2725QF,Monitors,Good,BMC,1,CN-0NDCCJ-WSL00-471-ERTL,,
 LA,Alienware AW2524H Monitor,Alienware,AW2524H,Monitors,Good,BMC,1,CN-0T0MDG-QDC00-2CM-06KL,,Ben is probably taking
@@ -643,15 +643,15 @@ LA,Rode Wireless go II Mic 1,Rode,Wireless go II,,Good,BMC,1,HG0100418,,
 LA,Rode Wireless go II Mic 2,Rode,Wireless go II,,Good,BMC,1,HI0100418,,
 LA,Rode Wireless go II,Rode,Wireless go II,Audio/Audio Mics,Good,BMC,1,HF0100418,,
 LA,AKG K240 STUDIO,AKG,K240 STUDIO,Headphones,Good,BMC,1,,,
-LA,ShuttleXpress Prompter Wheel ,Contour,ShuttleXpress,Studio,Good,BMC,1,229697,,
+LA,"ShuttleXpress Prompter Wheel ",Contour,ShuttleXpress,Studio,Good,BMC,1,229697,,
 LA,360 Cam,Insta360,X4,Cameras,Good,BMC,1,IBMEA2408R45VC,,
-LA,Battery ,GoPro,SPBL1B-C,Batteries,Good,BMC,1,,,
-LA,Battery ,Insta360,Insta360 battery,Batteries,Good,BMC,1,bt4at24076a8pxk86sry3,,
+LA,"Battery ",GoPro,SPBL1B-C,Batteries,Good,BMC,1,,,
+LA,"Battery ",Insta360,Insta360 battery,Batteries,Good,BMC,1,bt4at24076a8pxk86sry3,,
 LA,Alienware m16 R2 Laptop,Alienware,m16 R2,Product,Good,BMC,1,C0FLS0F,,Inside the Giant Laptop with Alex Corea
 LA,godox Wireless Flash Receiver,Godox,X1T,Lighting - Photo,Good,BMC,1,8110A,,
 LA,Alienware 16 Area 51 Laptop,Alienware,AA16250,Product,Good,BMC,1,2S4PVT3,,
 LA,Alienware Aurora ACT1250 PC,Alienware,ACT1250,Product,Good,BMC,1,FB6B794,PC Tower / Computer,
-LA,Light ,ZHIYUN,Molus,Lighting,Good,BMC,1,8ff08b0c3120098,,
+LA,"Light ",ZHIYUN,Molus,Lighting,Good,BMC,1,8ff08b0c3120098,,
 LA,Alienware Pro Wireless Keyboard [1],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-39K-007A-X30,White,LM-P3-335
 LA,Alienware Pro Wireless Keyboard [2],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-4BI-003K-A04,White,In plastic wrap
 LA,Alienware Pro Wireless Keyboard [3],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-3CD-00LB-A00,White,BMC PRO-K #14
@@ -659,7 +659,7 @@ LA,Alienware Pro Wireless Keyboard [4],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R
 LA,Alienware Pro Wireless Keyboard [5],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-39K-0003-X30,Black,LM-P3-087
 LA,Alienware Pro Wireless Keyboard [6],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-3CG-01UJ-A00,Black,BMC PRO-K #09
 LA,Alienware Pro Wireless Keyboard [7],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-39K-000N-X30,Black,LM-P3-133
-LA,Sony BP-U35 Battery ,Sony, BP-U35 Battery ,Batteries,Good,BMC,1,20240905,,
+LA,"Sony BP-U35 Battery ",Sony," BP-U35 Battery ",Batteries,Good,BMC,1,20240905,,
 LA,Alienware Pro Wireless Keyboard [8],Alienware,PRO-KB,Product,Usable,BMC,1,CN-0R987V-CH400-39K-007B-X30,White,BMC PRO-K #05 (NO DONGLE)
 LA,Alienware Pro Wireless Keyboard [9],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-39K-007E-X30,White,BMC PRO-K #07
 LA,Alienware Pro Wireless Keyboard [10],Alienware,PRO-KB,Product,Good,BMC,1,CN-0R987V-CH400-4AT-00IE-A02,Black,In plastic wrap
@@ -673,26 +673,26 @@ LA,Alienware Pro Wireless Mouse [6],Alienware,PRO-MS,Product,Usable,BMC,1,CN-05M
 LA,Alienware Pro Wireless Mouse [7],Alienware,PRO-MS,Product,Usable,BMC,1,CN-05MRYJ-CH400-3BN-0CTM-X30,White,(NO DONGLE) BMC PRO-M #05
 LA,Alienware Pro Wireless Mouse [8],Alienware,PRO-MS,Product,Good,BMC,1,CN-05MRYJ-CH400-499-0A4M-A04,White,BMC PRO-M #13
 LA,Bp-u100,Jupio,proline bp-u100,Batteries,Good,BMC,1,BSO0013,,
-LA,Kastar BP-U60 Battery ,Kastar,bpu-60,Batteries,Good,BMC,1,,,
+LA,"Kastar BP-U60 Battery ",Kastar,bpu-60,Batteries,Good,BMC,1,,,
 LA,SmallRig NP-F970,SmallRig,NP-F970,Batteries,Good,BMC,1,,,
 LA,Atombat NP-F750,Atomos,NP-F750,Batteries,Good,BMC,1,,,
-LA,Wireless Pro ,Rode,wireless pro transmitter,Audio/Audio Lavs,Good,BMC,1,JI0206972,,
+LA,"Wireless Pro ",Rode,wireless pro transmitter,Audio/Audio Lavs,Good,BMC,1,JI0206972,,
 LA,Wireless Pro,Rode,Wireless Pro Mic 1,Audio/Audio Lavs,Good,BMC,1,JK0206972,,
-LA,Wireless Pro ,Rode,Wireless Pro Mic 2,Audio/Audio Lavs,Good,BMC,1,JJ0206972,,
+LA,"Wireless Pro ",Rode,Wireless Pro Mic 2,Audio/Audio Lavs,Good,BMC,1,JJ0206972,,
 LA,Battery charger Atomos,Atomos,l series charger,Battery Chargers,Good,BMC,1,K499FBC50E56,,
 LA,Fx3 Top Handle,Sony,Fx3 Top Handle,Camera Accessories,Good,BMC,3,,,
 LA,Pocket 3,DJI,pocket 3,Cameras,Good,BMC,1,5WTZM7K0024V2R,,
-LA,Boom Mic,Rode,NTG ,,Good,BMC,1,FW0038390,,
+LA,Boom Mic,Rode,"NTG ",,Good,BMC,1,FW0038390,,
 LA,Shure Movie mic 1,Shure,Movie Mic transmitter,Audio/Audio Lavs,Good,BMC,1,,,
 LA,Shure Movie mic 2,Shure,Movie Mic transmitter,Audio/Audio Lavs,Good,BMC,1,,,
 LA,512gb MicroSD,SanDisk,512gb MicroSD v30,Camera Accessories/Camera Media,Good,BMC,1,,,
 LA,microSD 32GB,Delkin,32gb MicroSD,Camera Accessories/Camera Media,Good,BMC,1,,,
-LA,128gb SD 95mb ,PNY,128gb elitme performance,,Good,BMC,1,,,
+LA,"128gb SD 95mb ",PNY,128gb elitme performance,,Good,BMC,1,,,
 LA,SanDisk 128gb #15,SanDisk,128gb v90,Camera Accessories/Camera Media,Good,BMC,1,2448TPDN004147643,,
 LA,SanDisk 128gb #16,SanDisk,128gb v90,Camera Accessories/Camera Media,Good,BMC,1,2448TPDN004147643,,
 LA,Alienware Pro Headset [1],Alienware,PRO-HS,Product,Good,BMC,1,CN-09K2M1-MYH8Y-496-0057-A00,White,
 LA,Alienware Pro Headset [2],Alienware,PRO-HS,Product,Good,BMC,1,CN-0N6YJD-MYH8Y-51D-0392-A02,Black,
-LA,Alienware Pro Headset [3],Alienware,PRO-HS,Product,Usable,BMC,1,CN-09K2M1-MYH8Y-44O-0080-X02,White,(MISSING DONGLE) BMC PRO-H #3 
+LA,Alienware Pro Headset [3],Alienware,PRO-HS,Product,Usable,BMC,1,CN-09K2M1-MYH8Y-44O-0080-X02,White,"(MISSING DONGLE) BMC PRO-H #3 "
 LA,Alienware Pro Headset [4],Alienware,PRO-HS,Product,Good,BMC,1,CN-0N6YJD-MYH8Y-51D-03US-A02,Black,
 LA,Alienware Pro Headset [5],Alienware,PRO-HS,Product,Missing,BMC,1,CN-09K2M1-MYH8Y-47I-04X2-A00,White,(HEADSET MISSING FROM BOX)
 LA,Alienware Pro Headset [6],Alienware,PRO-HS,Product,Missing,BMC,1,CN-09K2M1-MYH8Y-44O-007K-X02,White,(HEADSET MISSING FROM BOX) BMC PRO-H #6
