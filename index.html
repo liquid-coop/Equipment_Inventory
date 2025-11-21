@@ -966,7 +966,7 @@
 
     // ---- SORTING ----
     function sortTable(columnIndex) {
-      const table = document.getElementById('sheet');
+      const table = document.getElementById(`sheet-${currentSheetName}`);
       const tbody = table.querySelector('tbody');
       if (!tbody) return;
 
@@ -1007,7 +1007,7 @@
     }
 
     function updateSortIndicators() {
-      const table = document.getElementById('sheet');
+      const table = document.getElementById(`sheet-${currentSheetName}`);
       const thead = table.querySelector('thead');
       if (!thead) return;
 
@@ -1078,7 +1078,7 @@
     function applyFilters() {
       const searchInput = document.getElementById('searchInput');
       const searchTerm = searchInput.value.toLowerCase();
-      const table = document.getElementById('sheet');
+      const table = document.getElementById(`sheet-${currentSheetName}`);
       const tbody = table.querySelector('tbody');
       const tableInfo = document.getElementById('table-info');
       const filterSelects = document.querySelectorAll('#filter-container select');
