@@ -10,7 +10,7 @@ export default async function handler(request, response) {
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
   const REPO_OWNER = process.env.REPO_OWNER; // e.g., 'johnallencooper'
   const REPO_NAME = process.env.REPO_NAME;   // e.g., 'equipment-inventory'
-  const FILE_PATH = 'database.csv';
+  const FILE_PATH = 'inventory-app/database.csv';
 
   if (!GITHUB_TOKEN || !REPO_OWNER || !REPO_NAME) {
     return response.status(500).json({ message: "Server is not configured correctly. Missing environment variables." });
