@@ -409,14 +409,16 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadData(); // Load data from GitHub on page load
       document.getElementById('save-data-btn').addEventListener('click', commitChangesToGitHub);
+
+      document.getElementById('cancel-delete').onclick = () => {
         document.getElementById('delete-modal').style.display = 'none';
         rowToDelete = null;
       };
 
-      document.getElementById('confirm-delete').onclick = () => {
+      document.getElementById('confirm-delete').addEventListener('click', () => {
         document.getElementById('delete-modal').style.display = 'none';
         if (rowToDelete !== null) deleteRow(rowToDelete);
-      };
+      });
     });
 
     function processCsvData(csvString) {
