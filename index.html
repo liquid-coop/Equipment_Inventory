@@ -228,9 +228,6 @@
       border-color: #3BB0D4;
       font-weight: 700;
     }
-    .owner-column {
-      width: 110px;
-    }
     .serial-column {
       width: 90px;
     }
@@ -608,9 +605,6 @@
             case 'quantity':
               th.classList.add('count-column');
               break;
-            case 'owner':
-              th.classList.add('owner-column');
-              break;
             case 'serial number':
               th.classList.add('serial-column');
               break;
@@ -635,9 +629,6 @@
             switch (lowerCaseHeader) {
               case 'quantity':
                 td.classList.add('count-column');
-                break;
-              case 'owner':
-                td.classList.add('owner-column');
                 break;
               case 'serial number':
                 td.classList.add('serial-column');
@@ -671,18 +662,6 @@
                 const option = document.createElement('option');
                 option.value = stat;
                 option.textContent = stat;
-                select.appendChild(option);
-              });
-              select.value = cellValue;
-              td.appendChild(select);
-            } else if (header.toLowerCase() === 'owner') {
-              const select = document.createElement('select');
-              select.onchange = (e) => updateCell(index + 1, headerIndex, e.target.value);
-              const owners = ['BMC', 'Liquid Media'];
-              owners.forEach(owner => {
-                const option = document.createElement('option');
-                option.value = owner;
-                option.textContent = owner;
                 select.appendChild(option);
               });
               select.value = cellValue;
@@ -843,20 +822,6 @@
             option.textContent = stat;
             if (stat === 'Good') {
               option.selected = true; // Set 'Good' as the default
-            }
-            select.appendChild(option);
-          });
-          inputGroup.appendChild(select);
-        } else if (header.toLowerCase() === 'owner') {
-          const select = document.createElement('select');
-          const owners = ['BMC', 'Liquid Media'];
-
-          owners.forEach(owner => {
-            const option = document.createElement('option');
-            option.value = owner;
-            option.textContent = owner;
-            if (owner === 'BMC') {
-              option.selected = true; // Set BMC as the default
             }
             select.appendChild(option);
           });
