@@ -739,7 +739,7 @@
     }
 
     // ---- ADD ITEM ----
-    function addItem() {
+    async function addItem() {
       const addButton = document.querySelector('.add-item-form button');
       const fields = document.querySelectorAll('.add-item-form input[type="text"], .add-item-form select');
       const newRow = Array.from(fields).map(field => field.value);
@@ -750,13 +750,13 @@
       }
 
       addButton.disabled = true;
-      addButton.textContent = 'Adding...';
+      addButton.textContent = 'Saving...';
 
       allData[currentSheetName].push(newRow);
-      const saveBtn = document.getElementById('save-data-btn');
-      saveBtn.style.display = 'inline';
-      alert('Item added to the list. Click "Save Changes" to commit to GitHub.');
       renderCurrentSheet(); // Refresh the entire view
+      
+      await commitChangesToGitHub();
+
       addButton.disabled = false;
       addButton.textContent = 'Add Item';
     }
