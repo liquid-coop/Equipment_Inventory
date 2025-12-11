@@ -494,7 +494,8 @@
         return Papa.unparse(flatData);
     }
 
-    async function commitChangesToGitHub() {
+    async function commitChangesToGitHub(arg) {
+      const throwOnError = arg === true;
       const saveBtn = document.getElementById('save-data-btn');
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
@@ -522,10 +523,15 @@
         // This also confirms the save was successful.
         await loadData(true); // Reload data silently to get the new SHA
       } catch (err) {
-        alert(`Failed to save changes to GitHub: ${err.message}`);
         console.error(err);
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save Changes';
+        
+        if (throwOnError) {
+            throw err;
+        } else {
+            alert(`Failed to save changes to GitHub: ${err.message}`);
+        }
       }
     }
     function getHeaderDisplayText(originalHeader) {
@@ -755,7 +761,22 @@
       allData[currentSheetName].push(newRow);
       renderCurrentSheet(); // Refresh the entire view
       
-      await commitChangesToGitHub();
+      try {
+          await commitChangesToGitHub(true);
+      } catch (err) {
+          // If we get a SHA mismatch, it means someone else updated the file.
+          // We should reload the data, re-apply our new item, and try again.
+          if (err.message && err.message.includes('does not match')) {
+              console.log('SHA mismatch detected. Reloading and retrying...');
+              allData[currentSheetName].pop(); // Remove the item we just added to the stale data
+              await loadData(true); // Fetch latest data
+              allData[currentSheetName].push(newRow); // Add item to fresh data
+              renderCurrentSheet();
+              await commitChangesToGitHub(); // Retry save (standard alert on fail)
+          } else {
+              alert(`Failed to save changes to GitHub: ${err.message}`);
+          }
+      }
 
       addButton.disabled = false;
       addButton.textContent = 'Add Item';
