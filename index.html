@@ -436,7 +436,9 @@
 
               allData = newData;
               availableSheets = Object.keys(allData).sort();
-              currentSheetName = availableSheets[0] || 'LA';
+              if (!availableSheets.includes(currentSheetName)) {
+                  currentSheetName = availableSheets[0] || 'LA';
+              }
 
               document.getElementById('add-item-container').style.display = 'block';
 
