@@ -594,6 +594,7 @@
         // Header Row (first row of data)
         const headerRow = document.createElement('tr');
         originalHeaders.forEach((headerText, index) => {
+          if (headerText.toLowerCase() === 'owner') return;
           const th = document.createElement('th');
           th.textContent = getHeaderDisplayText(headerText);
           th.dataset.sortable = "true";
@@ -622,6 +623,7 @@
           const tr = document.createElement('tr');
           // Iterate over headers to ensure a cell is created for every column, even if empty.
           originalHeaders.forEach((header, headerIndex) => {
+            if (header.toLowerCase() === 'owner') return;
             const cellValue = row[headerIndex] || ''; // Use empty string for missing cells
             const td = document.createElement('td');
 
@@ -791,6 +793,10 @@
       headers.forEach(header => {
         const inputGroup = document.createElement('div');
         inputGroup.className = 'input-group';
+
+        if (header.toLowerCase() === 'owner') {
+          inputGroup.style.display = 'none';
+        }
 
         const label = document.createElement('label');
         label.textContent = header;
@@ -1011,7 +1017,7 @@
       const headers = values[0];
       const dataRows = values.slice(1);
 
-      const headersToExclude = ['item', 'quantity', 'serial number', 'description'];
+      const headersToExclude = ['item', 'quantity', 'serial number', 'description', 'owner'];
 
       headers.forEach((header, index) => {
         const lowerCaseHeader = header.toLowerCase();
