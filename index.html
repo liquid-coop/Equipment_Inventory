@@ -568,10 +568,17 @@
 
         // Find category column index and unique values for dropdowns
         const headers = values[0];
-        const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
+        
+        // Use categories from 'LA' tab
         let uniqueCategories = [];
-        if (categoryIndex !== -1) {
-            uniqueCategories = [...new Set(values.slice(1).map(row => row[categoryIndex]).filter(Boolean))].sort();
+        const categorySource = allData['LA'] || values;
+        if (categorySource && categorySource.length > 0) {
+            const sourceHeaders = categorySource[0];
+            const sourceRows = categorySource.slice(1);
+            const sourceCatIndex = sourceHeaders.findIndex(h => h.toLowerCase() === 'category');
+            if (sourceCatIndex !== -1) {
+                uniqueCategories = [...new Set(sourceRows.map(row => row[sourceCatIndex]).filter(Boolean))].sort();
+            }
         }
 
         // If there's only a header or no data, just append the empty wrapper and stop.
@@ -781,10 +788,16 @@
       const headers = values[0];
       const dataRows = values.slice(1);
 
-      const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category');
+      // Use categories from 'LA' tab
       let uniqueCategories = [];
-      if (categoryIndex !== -1) {
-          uniqueCategories = [...new Set(dataRows.map(row => row[categoryIndex]).filter(Boolean))].sort();
+      const categorySource = allData['LA'] || values;
+      if (categorySource && categorySource.length > 0) {
+          const sourceHeaders = categorySource[0];
+          const sourceRows = categorySource.slice(1);
+          const sourceCatIndex = sourceHeaders.findIndex(h => h.toLowerCase() === 'category');
+          if (sourceCatIndex !== -1) {
+              uniqueCategories = [...new Set(sourceRows.map(row => row[sourceCatIndex]).filter(Boolean))].sort();
+          }
       }
 
       const brandIndex = headers.findIndex(h => h.toLowerCase() === 'brand');
