@@ -383,7 +383,7 @@
       sha: null // The SHA of the file from GitHub, needed for updates
     };
     let allData = {}; // Will hold data for all sheets, e.g., { LA: [...], BR: [...] }
-    let currentSheetName = 'LA';
+    let currentSheetName = localStorage.getItem('currentSheetName') || 'LA';
     let availableSheets = [];
 
     let totalItemCount = 0;
@@ -939,6 +939,7 @@
 
     function switchSheet(sheetName, isInitialLoad = false) {
       currentSheetName = sheetName;
+      localStorage.setItem('currentSheetName', sheetName);
 
       // Update the active state on the buttons
       document.querySelectorAll('#sheet-selector button').forEach(btn => {
