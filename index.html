@@ -522,6 +522,17 @@
         // The backend doesn't send the new sha on PUT, so we reload to get it.
         // This also confirms the save was successful.
         await loadData(true); // Reload data silently to get the new SHA
+
+        // Provide user feedback on successful save
+        saveBtn.textContent = 'Saved!';
+        saveBtn.classList.remove('unsaved');
+        saveBtn.disabled = false;
+
+        setTimeout(() => {
+          saveBtn.style.display = 'none';
+          saveBtn.textContent = 'Save Changes';
+          saveBtn.classList.add('unsaved');
+        }, 2000);
       } catch (err) {
         console.error(err);
         saveBtn.disabled = false;
