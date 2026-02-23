@@ -456,7 +456,7 @@
       const loadingOverlay = document.getElementById('loading-overlay');
       if (!silent) loadingOverlay.style.display = 'flex';
       try {
-        const res = await fetch('/api/inventory'); // Call our new backend
+        const res = await fetch(`/api/inventory?t=${Date.now()}`); // Call our new backend with cache buster
 
         if (!res.ok) {
             if (res.status === 404) {
@@ -519,9 +519,13 @@
         if (!res.ok) throw new Error(`API Error: ${(await res.json()).message}`);
         
         const data = await res.json();
-        // The backend doesn't send the new sha on PUT, so we reload to get it.
-        // This also confirms the save was successful.
-        await loadData(true); // Reload data silently to get the new SHA
+        
+        // Update the SHA with the new one from the server
+        if (data.newSha) {
+            dataState.sha = data.newSha;
+        } else {
+            await loadData(true); // Fallback if backend doesn't return SHA
+        }
 
         // Provide user feedback on successful save
         saveBtn.textContent = 'Saved!';

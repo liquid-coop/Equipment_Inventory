@@ -34,7 +34,7 @@ export default async function handler(request, response) {
     if (request.method === 'PUT') {
       const { content, sha, message } = request.body;
       
-      await octokit.repos.createOrUpdateFileContents({
+      const { data } = await octokit.repos.createOrUpdateFileContents({
         owner: REPO_OWNER,
         repo: REPO_NAME,
         path: FILE_PATH,
@@ -42,7 +42,7 @@ export default async function handler(request, response) {
         content: content, // The frontend will send this already base64 encoded
         sha: sha,
       });
-      return response.status(200).json({ message: "File updated successfully" });
+      return response.status(200).json({ message: "File updated successfully", newSha: data.content.sha });
     }
 
     // If the request method is not GET or PUT, return an error
