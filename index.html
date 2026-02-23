@@ -374,10 +374,6 @@
   </div>
 
   <script>
-    const CONSTANTS = {
-      PREDEFINED_STATUSES: ['Good', 'Usable', 'Needs Repair', 'Out for Repair', 'Missing']
-    };
-
     // Global state
     let dataState = {
       sha: null // The SHA of the file from GitHub, needed for updates
@@ -602,12 +598,6 @@
             uniqueCategories = getUniqueColumnValues(categorySource, 'category');
         }
 
-        // If there's only a header or no data, just append the empty wrapper and stop.
-        if (values.length <= 1) {
-            container.appendChild(tableWrapper);
-            return;
-        }
-
 
         // Create thead and tbody
         const thead = document.createElement('thead');
@@ -748,6 +738,9 @@
         document.getElementById(`sheet-${currentSheetName}`)?.parentElement.remove();
         renderSheet(currentSheetName, tableContainer);
         updateSortIndicators(); // Apply indicators if table was previously sorted
+        
+        const values = allData[currentSheetName] || [globalHeaders];
+        createAddItemForm(values);
     }
 
     // ---- UPDATE CELL ----
@@ -980,10 +973,12 @@
       }
 
       // Update item count display
-      const values = allData[currentSheetName] || [];
+      const values = allData[currentSheetName] || [globalHeaders];
       totalItemCount = values.length > 0 ? values.length - 1 : 0;
       // If the sheet is new and only has headers, count is 0
       if (values.length === 1 && values[0] === globalHeaders) totalItemCount = 0;
+      
+      createAddItemForm(values);
 
       document.getElementById('table-info').textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
 
