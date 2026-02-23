@@ -392,7 +392,11 @@
       columnIndex: null,
       direction: 'asc' // 'asc' or 'desc'
     };
-    let originalHeaders = [];
+    let globalHeaders = []; // Renamed from originalHeaders to avoid confusion with local scope in renderSheet
+    const CONSTANTS = {
+      PREDEFINED_STATUSES: ['Good', 'Usable', 'Needs Repair', 'Out for Repair', 'Missing'],
+      DEFAULT_HEADERS: ['Item', 'Description', 'Category', 'Brand', 'Model', 'Serial number', 'Status', 'Notes'] // Example default headers
+    };
 
     // ---- INITIALIZATION ----
     document.addEventListener('DOMContentLoaded', () => {
@@ -420,7 +424,8 @@
               }
 
               const newData = {};
-              const headersWithoutLocation = results.meta.fields.filter(h => h !== 'location');
+              const headersWithoutLocation = results.meta.fields.filter(h => h.toLowerCase() !== 'location');
+              globalHeaders = headersWithoutLocation.length > 0 ? headersWithoutLocation : CONSTANTS.DEFAULT_HEADERS; // Set global headers here
 
               results.data.forEach(row => {
                   const location = row.location;
@@ -436,8 +441,18 @@
 
               allData = newData;
               availableSheets = Object.keys(allData).sort();
+              // Ensure 'DE' is always an available sheet
+              if (!availableSheets.includes('DE')) {
+                  availableSheets.push('DE');
+                  availableSheets.sort(); // Re-sort after adding
+              }
+
               if (!availableSheets.includes(currentSheetName)) {
                   currentSheetName = availableSheets[0] || 'LA';
+              }
+              // If currentSheetName is 'DE' and it has no data, ensure it's initialized with globalHeaders
+              if (currentSheetName === 'DE' && !allData['DE']) {
+                  allData['DE'] = [globalHeaders];
               }
 
               document.getElementById('add-item-container').style.display = 'block';
@@ -549,24 +564,17 @@
         }
       }
     }
-    function getHeaderDisplayText(originalHeader) {
+    function getHeaderDisplayText(headerText) {
         const headerMap = {
             'Quantity': '#',
             'Serial number': 'Serial #'
         };
-        return headerMap[originalHeader] || originalHeader;
+        return headerMap[headerText] || headerText;
     }
 
-    // ---- FETCH DATA ----
     function renderSheet(sheetName, container) {
-      const values = allData[sheetName] || [];
+      const values = allData[sheetName] || [globalHeaders]; // If no data, use globalHeaders as the first row
       
-      // If there are headers, create the add item form (only for the first active sheet)
-        if (values.length > 0) {
-          originalHeaders = values[0];
-          createAddItemForm(values);
-        }
-
         // Create the filter dropdowns before rendering the table
         createFilterDropdowns(values);
         
@@ -585,18 +593,13 @@
         tableWrapper.appendChild(table);
 
         // Find category column index and unique values for dropdowns
-        const headers = values[0];
+        const headers = values[0]; // This will now be globalHeaders even if sheet is empty
         
         // Use categories from 'LA' tab
         let uniqueCategories = [];
         const categorySource = allData['LA'] || values;
         if (categorySource && categorySource.length > 0) {
-            const sourceHeaders = categorySource[0];
-            const sourceRows = categorySource.slice(1);
-            const sourceCatIndex = sourceHeaders.findIndex(h => h.toLowerCase() === 'category');
-            if (sourceCatIndex !== -1) {
-                uniqueCategories = [...new Set(sourceRows.map(row => row[sourceCatIndex]).filter(Boolean))].sort();
-            }
+            uniqueCategories = getUniqueColumnValues(categorySource, 'category');
         }
 
         // If there's only a header or no data, just append the empty wrapper and stop.
@@ -614,7 +617,7 @@
 
         // Header Row (first row of data)
         const headerRow = document.createElement('tr');
-        originalHeaders.forEach((headerText, index) => {
+        headers.forEach((headerText, index) => { // Use `headers` which is `values[0]` or `globalHeaders`
           if (headerText.toLowerCase() === 'owner' || headerText.toLowerCase() === 'quantity') return;
           const th = document.createElement('th');
           th.textContent = getHeaderDisplayText(headerText);
@@ -642,8 +645,8 @@
         // Data Rows (rest of the data)
         values.slice(1).forEach((row, index) => {
           const tr = document.createElement('tr');
-          // Iterate over headers to ensure a cell is created for every column, even if empty.
-          originalHeaders.forEach((header, headerIndex) => {
+          // Iterate over headers to ensure a cell is created for every column, even if empty. (Use `headers`)
+          headers.forEach((header, headerIndex) => {
             if (header.toLowerCase() === 'owner' || header.toLowerCase() === 'quantity') return;
             const cellValue = row[headerIndex] || ''; // Use empty string for missing cells
             const td = document.createElement('td');
@@ -731,7 +734,7 @@
         // After rendering, switch to the correct initial view
         switchSheet(currentSheetName, true);
 
-      } catch (err) {
+      } catch (err) { // Catch errors during rendering as well
         console.error("Failed to render data:", err);
         alert("An error occurred while loading the data. Please check the console for more details and try refreshing the page.");
       } finally {
@@ -759,6 +762,13 @@
       // We could add a "dirty" flag to the save button here if desired.
     }
 
+    function getUniqueColumnValues(data, columnName) {
+        if (!data || data.length === 0) return [];
+        const headers = data[0];
+        const colIndex = headers.findIndex(h => h.toLowerCase() === columnName.toLowerCase());
+        if (colIndex === -1) return [];
+        return [...new Set(data.slice(1).map(row => row[colIndex]).filter(Boolean))].sort();
+    }
     // ---- ADD ITEM ----
     async function addItem() {
       const addButton = document.querySelector('.add-item-form button');
@@ -773,7 +783,10 @@
       addButton.disabled = true;
       addButton.textContent = 'Saving...';
 
-      allData[currentSheetName].push(newRow);
+      if (!allData[currentSheetName]) { // Initialize sheet with headers if it's new
+          allData[currentSheetName] = [globalHeaders];
+      }
+      allData[currentSheetName].push(newRow); // Add the new row to the current sheet's data
       renderCurrentSheet(); // Refresh the entire view
       
       try {
@@ -785,6 +798,9 @@
               console.log('SHA mismatch detected. Reloading and retrying...');
               allData[currentSheetName].pop(); // Remove the item we just added to the stale data
               await loadData(true); // Fetch latest data
+              if (!allData[currentSheetName]) { // Re-initialize if it was a new sheet and got overwritten by reload
+                  allData[currentSheetName] = [globalHeaders];
+              }
               allData[currentSheetName].push(newRow); // Add item to fresh data
               renderCurrentSheet();
               await commitChangesToGitHub(); // Retry save (standard alert on fail)
@@ -800,28 +816,19 @@
     function createAddItemForm(values) {
       const container = document.getElementById('add-item-container');
       container.innerHTML = ''; // Clear previous form
+      
+      const headers = values.length > 0 ? values[0] : globalHeaders; // Use globalHeaders if values is empty or only contains headers
+      if (headers.length === 0) return; // No headers to create form fields for
 
-      if (values.length === 0) return;
-      const headers = values[0];
       const dataRows = values.slice(1);
 
       // Use categories from 'LA' tab
-      let uniqueCategories = [];
       const categorySource = allData['LA'] || values;
-      if (categorySource && categorySource.length > 0) {
-          const sourceHeaders = categorySource[0];
-          const sourceRows = categorySource.slice(1);
-          const sourceCatIndex = sourceHeaders.findIndex(h => h.toLowerCase() === 'category');
-          if (sourceCatIndex !== -1) {
-              uniqueCategories = [...new Set(sourceRows.map(row => row[sourceCatIndex]).filter(Boolean))].sort();
-          }
-      }
+      const uniqueCategories = getUniqueColumnValues(categorySource, 'category');
 
-      const brandIndex = headers.findIndex(h => h.toLowerCase() === 'brand');
-      let uniqueBrands = [];
-      if (brandIndex !== -1) {
-        uniqueBrands = [...new Set(dataRows.map(row => row[brandIndex]).filter(Boolean))].sort();
-      }
+      // Get unique brands from the current sheet's data rows
+      const uniqueBrands = getUniqueColumnValues(values, 'brand');
+
 
       const form = document.createElement('div');
       form.className = 'add-item-form';
@@ -975,6 +982,9 @@
       // Update item count display
       const values = allData[currentSheetName] || [];
       totalItemCount = values.length > 0 ? values.length - 1 : 0;
+      // If the sheet is new and only has headers, count is 0
+      if (values.length === 1 && values[0] === globalHeaders) totalItemCount = 0;
+
       document.getElementById('table-info').textContent = `${totalItemCount} item${totalItemCount !== 1 ? 's' : ''} in the equipment inventory.`;
 
       if (!isInitialLoad) applyFilters(); // Re-apply filters for the new view
@@ -1030,10 +1040,10 @@
       const headers = thead.querySelectorAll('th[data-sortable="true"]');
       headers.forEach((th) => {
         const columnIndex = parseInt(th.dataset.columnIndex, 10);
-        th.textContent = getHeaderDisplayText(originalHeaders[columnIndex]); // Reset to original text
+        th.textContent = getHeaderDisplayText(globalHeaders[columnIndex]); // Reset to original text
 
         if (columnIndex === sortState.columnIndex) {
-          const indicator = sortState.direction === 'asc' ? ' ▲' : ' ▼';
+          const indicator = sortState.direction === 'asc' ? ' ▲' : ' ▼'; // Add sort indicator
           th.textContent += indicator;
         }
       });
@@ -1045,7 +1055,8 @@
       container.innerHTML = ''; // Clear existing filters
 
       if (values.length < 2) return; // No data or only headers
-
+      
+      // Use globalHeaders if values is empty or only contains headers
       const headers = values[0];
       const dataRows = values.slice(1);
 
